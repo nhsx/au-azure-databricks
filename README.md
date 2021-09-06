@@ -80,6 +80,8 @@
 
 NHSX Analytics Unit - Data Engineering Team. Databricks analytics repository. Contains ETL pipeline notebooks for NHSX analytics projects.
 
+_**Note:** No data, public or private are shared in this repository._
+
 ### Folder Stucture
 
 | Name                   | Link                                                                                    | Description                                                     |
@@ -144,11 +146,11 @@ Distributed under the MIT License. _See [LICENSE.md](https://github.com/nhsx/au-
 
 <!-- CONTACT -->
 
-## Contact
+## About
 
-Project email: [data@nhsx.nhs.uk](data@nhsx.nhs.uk)
+Project contact email: [data@nhsx.nhs.uk](data@nhsx.nhs.uk)
 
-Project Link: [https://github.com/nhsx/au-azure-databricks](https://github.com/nhsx/au-azure-databricks)
+To find out more about the [Analytics Unit](https://www.nhsx.nhs.uk/key-tools-and-info/nhsx-analytics-unit/) visit our [project website](https://nhsx.github.io/AnalyticsUnit/projects.html) or get in touch at [analytics-unit@nhsx.nhs.uk](mailto:data@nhsx.nhs.uk)
 
 <!-- ACKNOWLEDGEMENTS
 ## Acknowledgements
