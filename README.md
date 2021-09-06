@@ -84,7 +84,7 @@ NHSX Analytics Unit - Data Engineering Team. Databricks analytics repository. Co
 
 | Name                   | Link                                                                                    | Description                                                     |
 | ---------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Orchestrator Notebooks | [[Link](https://github.com/nhsx/au-azure-databricks/tree/main/notebooks/orchestration)] | Azure Data Factory notebooks for running ephemeral job clusters |
+| Orchestrator Notebooks | [[Link](https://github.com/nhsx/au-azure-databricks/tree/main/orchestration)] | Azure Data Factory notebooks for running ephemeral job clusters |
 | Function Notebooks     | [[Link](https://github.com/nhsx/au-azure-databricks/tree/main/functions)]               | Helper functions used across all notebooks                      |
 | Analytics Notebooks    | [[Link](https://github.com/nhsx/au-azure-databricks/tree/main/analytics)]               | Analytical pipeline specific code                               |
 | Ingestion Notebooks    | [[Link](https://github.com/nhsx/au-azure-databricks/tree/main/ingestion)]               | Data ingestion pipeline specific code                           |
