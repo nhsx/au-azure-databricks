@@ -140,7 +140,7 @@ _See [CONTRIBUTING.md](https://github.com/nhsx/au-azure-databricks/blob/main/CON
 
 ## License
 
-Distributed under the MIT License. _See [LICENSE.md](https://github.com/nhsx/au-azure-databricks/blob/main/LICENSE.md) for more information._
+Distributed under the MIT License. _See [LICENSE.md](https://github.com/nhsx/au-azure-databricks/blob/main/LICENSE) for more information._
 
 <!-- CONTACT -->
 
