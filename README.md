@@ -10,10 +10,12 @@
 -->
 
 [![Contributors][contributors-shield]][contributors-url]
+[![Code Lines][code-lines]][code-lines-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
+
 
 <!-- PROJECT LOGO -->
 <br />
@@ -159,4 +161,6 @@ To find out more about the [Analytics Unit](https://www.nhsx.nhs.uk/key-tools-an
 [issues-shield]: https://img.shields.io/github/issues/nhsx/au-azure-databricks.svg?style=for-the-badge
 [issues-url]: https://github.com/nhsx/au-azure-databricks/issues
 [license-shield]: https://img.shields.io/github/license/nhsx/au-azure-databricks.svg?style=for-the-badge
-[license-url]: https://github.com/nhsx/au-azure-databricks/blob/master/LICENSE
+[license-url]: https://github.com/nhsx/au-azure-databricks/blob/main/LICENSE
+[code-lines]: https://img.shields.io/tokei/lines/github/nhsx/au-azure-databricks?label=Code%20Lines&style=for-the-badge
+[code-lines-url]: https://github.com/nhsx/au-azure-databricks
