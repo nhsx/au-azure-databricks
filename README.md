@@ -152,15 +152,15 @@ To find out more about the [Analytics Unit](https://www.nhsx.nhs.uk/key-tools-an
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 
-[contributors-shield]: https://img.shields.io/github/contributors/nhsx/au-azure-databricks.svg?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/nhsx/au-azure-databricks.svg?color=blue&style=for-the-badge
 [contributors-url]: https://github.com/nhsx/au-azure-databricks/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/nhsx/au-azure-databricks.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/nhsx/au-azure-databricks.svg?color=blue&style=for-the-badge
 [forks-url]: https://github.com/nhsx/au-azure-databricks/network/members
-[stars-shield]: https://img.shields.io/github/stars/nhsx/au-azure-databricks.svg?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/nhsx/au-azure-databricks.svg?color=blue&style=for-the-badge
 [stars-url]: https://github.com/nhsx/au-azure-databricks/stargazers
-[issues-shield]: https://img.shields.io/github/issues/nhsx/au-azure-databricks.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/nhsx/au-azure-databricks.svg?color=blue&style=for-the-badge
 [issues-url]: https://github.com/nhsx/au-azure-databricks/issues
-[license-shield]: https://img.shields.io/github/license/nhsx/au-azure-databricks.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/nhsx/au-azure-databricks.svg?color=blue&style=for-the-badge
 [license-url]: https://github.com/nhsx/au-azure-databricks/blob/main/LICENSE
-[code-lines]: https://img.shields.io/tokei/lines/github/nhsx/au-azure-databricks?label=Code%20Lines&style=for-the-badge
+[code-lines]: https://img.shields.io/tokei/lines/github/nhsx/au-azure-databricks?color=blue&label=Code%20Lines&style=for-the-badge
 [code-lines-url]: https://github.com/nhsx/au-azure-databricks
