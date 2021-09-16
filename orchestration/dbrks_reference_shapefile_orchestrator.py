@@ -69,9 +69,9 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 # COMMAND ----------
 
 #Squentially run metric notebooks
-for index, item in enumerate(config_JSON['pipeline']['ingestion']['databricks']): # get index of objects in JSON array
+for index, item in enumerate(config_JSON['pipeline']['raw']['databricks']): # get index of objects in JSON array
   try:
-    notebook = config_JSON['pipeline']['ingestion']['databricks'][index]['databricks_notebook']
+    notebook = config_JSON['pipeline']['raw']['databricks'][index]['databricks_notebook']
     dbutils.notebook.run(notebook, 120) # is 120 sec long enough for timeout?
   except Exception as e:
     print(e)

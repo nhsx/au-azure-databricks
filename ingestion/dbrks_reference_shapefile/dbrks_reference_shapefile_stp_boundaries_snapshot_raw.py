@@ -72,12 +72,10 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 # -------------------------------------------------------------------------
 
 file_system = config_JSON['pipeline']['adl_file_system']
-shapefile_sink_path = config_JSON['pipeline']['ingestion']['databricks'][1]["shapefile_sink_path"]
-shapefile_sink_file = config_JSON['pipeline']['ingestion']['databricks'][1]["shapefile_sink_file"]
-code_maping_sink_path = config_JSON['pipeline']['ingestion']['databricks'][1]["code_maping_sink_path"]
-code_maping_sink_file = config_JSON['pipeline']['ingestion']['databricks'][1]["code_maping_sink_file"]
-
-
+shapefile_sink_path = config_JSON['pipeline']['raw']['databricks'][0]["shapefile_sink_path"]
+shapefile_sink_file = config_JSON['pipeline']['raw']['databricks'][0]["shapefile_sink_file"]
+code_maping_sink_path = config_JSON['pipeline']['raw']['databricks'][0]["code_maping_sink_path"]
+code_maping_sink_file = config_JSON['pipeline']['raw']['databricks'][0]["code_maping_sink_file"]
 
 # COMMAND ----------
 
@@ -136,7 +134,7 @@ mapped_stp_geojson_df = pd.merge(stp_geojson_df_1, stp_code_map_df, on=['ONS STP
 # Upload processed data to datalake
 # -------------------------------------------------------------------------
 #STP boundary GeoJSON
-current_date_path = datetime.now().strftime('%d-%m-%Y') + '/'
+current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
 file_contents = io.StringIO()
 geojson.dump(stp_geojson, file_contents, ensure_ascii=False, indent=4)
 datalake_upload(file_contents, CONNECTION_STRING, file_system, shapefile_sink_path+current_date_path, shapefile_sink_file)
