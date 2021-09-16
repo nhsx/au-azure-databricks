@@ -75,12 +75,12 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 file_system = config_JSON['pipeline']['adl_file_system']
 ods_source_path = config_JSON['pipeline']['raw']["source_path"]
 ods_source_file = config_JSON['pipeline']['raw']["source_file"]
-shapefile_sink_path = config_JSON['pipeline']['raw']['databricks'][0]["shapefile_sink_path"]
-shapefile_sink_file = config_JSON['pipeline']['raw']['databricks'][0]["shapefile_sink_file"]
-code_maping_sink_path = config_JSON['pipeline']['raw']['databricks'][0]["code_maping_sink_path"]
-code_maping_sink_file = config_JSON['pipeline']['raw']['databricks'][0]["code_maping_sink_file"]
-markdown_sink_path = config_JSON['pipeline']['raw']['databricks'][0]["markdown_sink_path"]
-markdown_sink_file = config_JSON['pipeline']['raw']['databricks'][0]["markdown_sink_file"]
+shapefile_sink_path = config_JSON['pipeline']['raw']['databricks'][2]["shapefile_sink_path"]
+shapefile_sink_file = config_JSON['pipeline']['raw']['databricks'][2]["shapefile_sink_file"]
+code_maping_sink_path = config_JSON['pipeline']['raw']['databricks'][2]["code_maping_sink_path"]
+code_maping_sink_file = config_JSON['pipeline']['raw']['databricks'][2]["code_maping_sink_file"]
+markdown_sink_path = config_JSON['pipeline']['raw']['databricks'][2]["markdown_sink_path"]
+markdown_sink_file = config_JSON['pipeline']['raw']['databricks'][2]["markdown_sink_file"]
 
 # COMMAND ----------
 
