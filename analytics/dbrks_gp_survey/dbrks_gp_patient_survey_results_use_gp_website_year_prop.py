@@ -84,6 +84,6 @@ df_processed = df2.copy()
 
 # Upload processed data to datalake
 # -------------------------------------------------------------------------
-file_contents = io.TextIOWrapper()
+file_contents = io.StringIO()
 df_processed.to_csv(file_contents)
 datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+latestFolder, sink_file)
