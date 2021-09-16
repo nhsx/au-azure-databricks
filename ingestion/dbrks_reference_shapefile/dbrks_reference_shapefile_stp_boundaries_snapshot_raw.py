@@ -130,6 +130,11 @@ stp_geojson_df_1.rename(columns={'attributes.%s' %column_ons_code :'ONS STP code
 mapped_stp_geojson_df = pd.merge(stp_geojson_df_1, stp_code_map_df, on=['ONS STP code', 'ONS STP code'], how = 'outer')
 mapped_stp_geojson_df.index.name = "Unique ID"
 
+
+# COMMAND ----------
+
+
+
 # COMMAND ----------
 
 # Upload processed data to datalake
@@ -142,5 +147,5 @@ datalake_upload(file_contents, CONNECTION_STRING, file_system, shapefile_sink_pa
 
 #STP ONS to ODS code mapping table
 file_contents = io.BytesIO()
-mapped_stp_geojson_df.to_parquet(file_contents, engine="pyarrow", index=False)
+mapped_stp_geojson_df.to_parquet(file_contents, engine="pyarrow")
 datalake_upload(file_contents, CONNECTION_STRING, file_system, code_maping_sink_path+current_date_path, code_maping_sink_file)
