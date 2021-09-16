@@ -160,7 +160,7 @@ datalake_upload(file_contents, CONNECTION_STRING, file_system, shapefile_sink_pa
 
 #CCG ONS to ODS code mapping table
 file_contents = io.BytesIO()
-mapped_ccg_geojson_df.to_parquet(file_contents, engine="pyarrow", index=False)
+mapped_ccg_geojson_df.to_parquet(file_contents, engine="pyarrow")
 datalake_upload(file_contents, CONNECTION_STRING, file_system, code_maping_sink_path+current_date_path, code_maping_sink_file)
 
 #CCG ODS code mapping to CCG shapefile documentation
