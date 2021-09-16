@@ -128,6 +128,7 @@ stp_geojson_df.columns = stp_geojson_df.columns.str.lower()
 stp_geojson_df_1 = stp_geojson_df.iloc[:,1:3]
 stp_geojson_df_1.rename(columns={'attributes.%s' %column_ons_code :'ONS STP code', 'attributes.%s' %column_stp_name: 'STP name'}, inplace=True)
 mapped_stp_geojson_df = pd.merge(stp_geojson_df_1, stp_code_map_df, on=['ONS STP code', 'ONS STP code'], how = 'outer')
+mapped_stp_geojson_df.index.name = "Unique ID"
 
 # COMMAND ----------
 

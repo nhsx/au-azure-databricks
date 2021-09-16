@@ -131,8 +131,7 @@ ccg_geojson_df.columns = ccg_geojson_df.columns.str.lower()
 ccg_geojson_df_1 = ccg_geojson_df.iloc[:,1:3]
 ccg_geojson_df_1.rename(columns={'attributes.%s' %column_ons_code :'ONS CCG code', 'attributes.%s' %column_ccg_name: 'CCG name'}, inplace=True)
 mapped_ccg_geojson_df = pd.merge(ccg_geojson_df_1, ccg_code_map_df, on=['ONS CCG code', 'ONS CCG code'])
-
-
+mapped_ccg_geojson_df.index.name = "Unique ID"
 
 # COMMAND ----------
 

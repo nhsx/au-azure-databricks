@@ -134,6 +134,7 @@ region_geojson_df.columns = region_geojson_df.columns.str.lower()
 region_geojson_df_1 = region_geojson_df.iloc[:,1:2]
 region_geojson_df_1.rename(columns={'attributes.%s' %column_ons_code :'ONS NHS region code'}, inplace=True)
 mapped_region_geojson_df = pd.merge(region_geojson_df_1, region_code_map_df, on=['ONS NHS region code', 'ONS NHS region code'], how = 'outer')
+mapped_region_geojson_df.index.name = "Unique ID"
 
 # COMMAND ----------
 
