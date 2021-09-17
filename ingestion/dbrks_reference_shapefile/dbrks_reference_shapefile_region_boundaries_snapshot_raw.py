@@ -87,9 +87,11 @@ markdown_sink_file = config_JSON['pipeline']['raw']['databricks'][2]["markdown_s
 # Processing
 # -------------------------------------------------------------------------
 #Ingest NHS region boundary GeoJSON
+
 search_url = "https://ons-inspire.esriuk.com/arcgis/rest/services/Health_Boundaries/"
+url_start = "https://ons-inspire.esriuk.com"
 string_filter = "NHS_England_Regions"
-ons_geoportal_geojson = ons_geoportal_download(search_url, string_filter)
+ons_geoportal_geojson = ons_geoportal_file_download(search_url, url_start, string_filter)
 
 # COMMAND ----------
 
@@ -101,27 +103,28 @@ column_ons_code = ons_geoportal_geojson['fields'][1]['name'].lower()
 column_region_name = ons_geoportal_geojson['fields'][2]['name'].lower()
 
 search_url = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/"
-url_1 = "https://services1.arcgis.com"
-url_2 = '/0/query?where=1%3D1&outFields=*&outSR=4326&f=json'
-page = requests.get(search_url)
-response = urlreq.urlopen(search_url)
-soup = BeautifulSoup(response.read(), "lxml")
-region_code_map_url = soup.find_all('a', href=re.compile("NHSER_APR"))[-1].get('href')
-full_url = url_1 + region_code_map_url + url_2
-with urlopen(full_url) as response:
-    region_code_map_json = json.load(response)
-    region_code_map_df = pd.json_normalize(region_code_map_json['features'])
+url_start = "https://services1.arcgis.com"
+string_filter = "NHSER_APR"
+region_code_map_json = ons_geoportal_file_download(search_url, url_start, string_filter)
+region_code_map_df = pd.json_normalize(region_code_map_json['features'])
 
+#Define column title variables 
 column_ons_code_1 = region_code_map_json['fields'][0]['name'].lower()
 column_ods_code = region_code_map_json['fields'][1]['name'].lower()
 column_region_name = region_code_map_json['fields'][2]['name'].lower()
+
+#Extract ONS, ODS codes and organization names from ONS to ODS code mapping file
 region_code_map_df = region_code_map_df.iloc[:,:3]
 region_code_map_df.columns = region_code_map_df.columns.str.lower()
 region_code_map_df.rename(columns={'attributes.%s' %column_ons_code_1 :'ONS NHS region code', 'attributes.%s' %column_ods_code: 'ODS NHS region code', 'attributes.%s' %column_region_name: 'NHS region name'}, inplace=True)
+
+#Extract ONS codes and organization names from shapefile
 region_geojson_df = pd.json_normalize(ons_geoportal_geojson['features'])
 region_geojson_df.columns = region_geojson_df.columns.str.lower()
 region_geojson_df_1 = region_geojson_df.iloc[:,1:2]
 region_geojson_df_1.rename(columns={'attributes.%s' %column_ons_code :'ONS NHS region code'}, inplace=True)
+
+#Merge files to create a mapping table
 mapped_region_geojson_df = pd.merge(region_geojson_df_1, region_code_map_df, on=['ONS NHS region code', 'ONS NHS region code'], how = 'outer')
 mapped_region_geojson_df.index.name = "Unique ID"
 
