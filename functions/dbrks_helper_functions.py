@@ -56,3 +56,18 @@ def datalake_latestFolder(CONNECTION_STRING, file_system, source_path):
       return latestFolder
   except Exception as e:
       print(e)
+
+# COMMAND ----------
+
+# Ingestion and analytical functions
+# -------------------------------------------------------------------------
+def ons_geoportal_file_download(search_url, url_start, string_filter):
+  url_2 = '/0/query?where=1%3D1&outFields=*&outSR=4326&f=json'
+  page = requests.get(search_url)
+  response = urlreq.urlopen(search_url)
+  soup = BeautifulSoup(response.read(), "lxml")
+  data_url = soup.find_all('a', href=re.compile(string_filter))[-1].get('href')
+  full_url = url_start + data_url + url_2
+  with urlopen(full_url)  as response:
+      json_file = json.load(response)
+  return json_file

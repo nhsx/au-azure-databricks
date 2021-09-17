@@ -89,17 +89,9 @@ markdown_sink_file = config_JSON['pipeline']['raw']['databricks'][0]["markdown_s
 # Ingest CCG boundary GeoJSON
 
 search_url = "https://ons-inspire.esriuk.com/arcgis/rest/services/Health_Boundaries/"
-url_1 = "https://ons-inspire.esriuk.com"
-url_2 = '/0/query?where=1%3D1&outFields=*&outSR=4326&f=json'
-page = requests.get(search_url)
-response = urlreq.urlopen(search_url)
-soup = BeautifulSoup(response.read(), "lxml")
-ccg_url = soup.find_all('a', href=re.compile("Clinical_Commissioning_Groups_April"))[-1].get('href')
-
-full_url = url_1 + ccg_url + url_2 
-with urlopen(full_url) as response:
-  ccg_geojson = json.load(response)
-
+url_start = "https://ons-inspire.esriuk.com"
+string_filter = "Clinical_Commissioning_Groups_April"
+ons_geoportal_geojson = ons_geoportal_file_download(search_url, url_start, string_filter)
 
 # COMMAND ----------
 
@@ -107,29 +99,31 @@ with urlopen(full_url) as response:
 # -------------------------------------------------------------------------
 #Ingest CCG ONS to ODS code mapping table, and map to CCG dataframe generated from the CCG boundary GeoJSON
 
-column_ons_code = ccg_geojson['fields'][1]['name'].lower()
-column_ccg_name = ccg_geojson['fields'][2]['name'].lower()
+column_ons_code = ons_geoportal_geojson['fields'][1]['name'].lower()
+column_ccg_name = ons_geoportal_geojson['fields'][2]['name'].lower()
+
 search_url = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/"
-url_1 = "https://services1.arcgis.com"
-url_2 = '/0/query?where=1%3D1&outFields=*&outSR=4326&f=json'
-page = requests.get(search_url)
-response = urlreq.urlopen(search_url)
-soup = BeautifulSoup(response.read(), "lxml")
-ccg_code_map_url = soup.find_all('a', href=re.compile("CCG_APR"))[-1].get('href')
-full_url = url_1 + ccg_code_map_url + url_2 
-with urlopen(full_url) as response:
-    ccg_code_map_json = json.load(response)
-    ccg_code_map_df = pd.json_normalize(ccg_code_map_json['features'])
-    
+url_start = "https://services1.arcgis.com"
+string_filter = "CCG_APR"
+ccg_code_map_json = ons_geoportal_file_download(search_url, url_start, string_filter)
+ccg_code_map_df = pd.json_normalize(stp_code_map_json['features'])
+
+#Define column title variables 
 column_ods_code = ccg_code_map_json['fields'][1]['name'].lower()
 column_ons_code_1 = ccg_code_map_json['fields'][0]['name'].lower()
+
+#Extract ONS, ODS codes and organization names from ONS to ODS code mapping file
 ccg_code_map_df = ccg_code_map_df.iloc[:,:2]
 ccg_code_map_df.columns = ccg_code_map_df.columns.str.lower()
 ccg_code_map_df.rename(columns={'attributes.%s' %column_ons_code_1 :'ONS CCG code', 'attributes.%s' %column_ods_code: 'ODS CCG code'}, inplace=True)
-ccg_geojson_df = pd.json_normalize(ccg_geojson['features'])
+
+#Extract ONS codes and organization names from shapefile
+ccg_geojson_df = pd.json_normalize(ons_geoportal_geojson['features'])
 ccg_geojson_df.columns = ccg_geojson_df.columns.str.lower()
 ccg_geojson_df_1 = ccg_geojson_df.iloc[:,1:3]
 ccg_geojson_df_1.rename(columns={'attributes.%s' %column_ons_code :'ONS CCG code', 'attributes.%s' %column_ccg_name: 'CCG name'}, inplace=True)
+
+#Merge files to create a mapping table
 mapped_ccg_geojson_df = pd.merge(ccg_geojson_df_1, ccg_code_map_df, on=['ONS CCG code', 'ONS CCG code'])
 mapped_ccg_geojson_df.index.name = "Unique ID"
 
@@ -155,7 +149,7 @@ ods_mappped_df = pd.merge(mapped_ccg_geojson_df, ods_df_3, on='ODS CCG code',how
 #CCG boundary GeoJSON
 current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
 file_contents = io.StringIO()
-geojson.dump(ccg_geojson, file_contents, ensure_ascii=False, indent=4)
+geojson.dump(ons_geoportal_geojson, file_contents, ensure_ascii=False, indent=4)
 datalake_upload(file_contents, CONNECTION_STRING, file_system, shapefile_sink_path+current_date_path, shapefile_sink_file)
 
 #CCG ONS to ODS code mapping table
@@ -167,5 +161,3 @@ datalake_upload(file_contents, CONNECTION_STRING, file_system, code_maping_sink_
 file_contents = io.StringIO()
 ods_mappped_df.to_markdown(file_contents)
 datalake_upload(file_contents, CONNECTION_STRING, file_system, markdown_sink_path+current_date_path, markdown_sink_file)
-
-
