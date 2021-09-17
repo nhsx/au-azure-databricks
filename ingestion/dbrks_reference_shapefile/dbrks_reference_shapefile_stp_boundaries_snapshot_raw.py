@@ -84,18 +84,8 @@ code_maping_sink_file = config_JSON['pipeline']['raw']['databricks'][1]["code_ma
 #Ingest STP boundary GeoJSON
 
 search_url = "https://ons-inspire.esriuk.com/arcgis/rest/services/Health_Boundaries/"
-url_1 = "https://ons-inspire.esriuk.com"
-url_2 = '/0/query?where=1%3D1&outFields=*&outSR=4326&f=json'
-
-page = requests.get(search_url)
-response = urlreq.urlopen(search_url)
-soup = BeautifulSoup(response.read(), "lxml")
-stp_url = soup.find_all('a', href=re.compile("Sustainability_and_Transformation_Partnerships"))[-1].get('href')
-full_url = url_1 + stp_url  + url_2
-
-with urlopen(full_url)  as response:
-    stp_geojson = json.load(response)
-
+string_filter = "Sustainability_and_Transformation_Partnerships"
+ons_geoportal_geojson = ons_geoportal_download(search_url, string_filter)
 
 # COMMAND ----------
 
@@ -103,8 +93,8 @@ with urlopen(full_url)  as response:
 # -------------------------------------------------------------------------
 #Ingest STP ONS to ODS code mapping table, and map to CCG dataframe generated from the STP boundary GeoJSON
 
-column_ons_code = stp_geojson['fields'][1]['name'].lower()
-column_stp_name = stp_geojson['fields'][2]['name'].lower()
+column_ons_code = ons_geoportal_geojson['fields'][1]['name'].lower()
+column_stp_name = ons_geoportal_geojson['fields'][2]['name'].lower()
 
 search_url = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/"
 url_1 = "https://services1.arcgis.com"
@@ -123,7 +113,7 @@ column_ons_code_1 = stp_code_map_json['fields'][0]['name'].lower()
 stp_code_map_df = stp_code_map_df.iloc[:,:2]
 stp_code_map_df.columns = stp_code_map_df.columns.str.lower()
 stp_code_map_df.rename(columns={'attributes.%s' %column_ons_code_1 :'ONS STP code', 'attributes.%s' %column_ods_code: 'ODS STP code'}, inplace=True)
-stp_geojson_df = pd.json_normalize(stp_geojson['features'])
+stp_geojson_df = pd.json_normalize(ons_geoportal_geojson['features'])
 stp_geojson_df.columns = stp_geojson_df.columns.str.lower()
 stp_geojson_df_1 = stp_geojson_df.iloc[:,1:3]
 stp_geojson_df_1.rename(columns={'attributes.%s' %column_ons_code :'ONS STP code', 'attributes.%s' %column_stp_name: 'STP name'}, inplace=True)
@@ -133,16 +123,12 @@ mapped_stp_geojson_df.index.name = "Unique ID"
 
 # COMMAND ----------
 
-
-
-# COMMAND ----------
-
 # Upload processed data to datalake
 # -------------------------------------------------------------------------
 #STP boundary GeoJSON
 current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
 file_contents = io.StringIO()
-geojson.dump(stp_geojson, file_contents, ensure_ascii=False, indent=4)
+geojson.dump(ons_geoportal_geojson, file_contents, ensure_ascii=False, indent=4)
 datalake_upload(file_contents, CONNECTION_STRING, file_system, shapefile_sink_path+current_date_path, shapefile_sink_file)
 
 #STP ONS to ODS code mapping table

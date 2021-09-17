@@ -87,20 +87,9 @@ markdown_sink_file = config_JSON['pipeline']['raw']['databricks'][2]["markdown_s
 # Processing
 # -------------------------------------------------------------------------
 #Ingest NHS region boundary GeoJSON
-
 search_url = "https://ons-inspire.esriuk.com/arcgis/rest/services/Health_Boundaries/"
-url_1 = "https://ons-inspire.esriuk.com"
-url_2 = '/0/query?where=1%3D1&outFields=*&outSR=4326&f=json'
-
-page = requests.get(search_url)
-response = urlreq.urlopen(search_url)
-soup = BeautifulSoup(response.read(), "lxml")
-nhs_regions_url = soup.find_all('a', href=re.compile("NHS_England_Regions"))[-1].get('href')
-full_url = url_1 + nhs_regions_url + url_2
-with urlopen(full_url)  as response:
-    nhs_regions_geojson = json.load(response)
-
-
+string_filter = "NHS_England_Regions"
+ons_geoportal_geojson = ons_geoportal_download(search_url, string_filter)
 
 # COMMAND ----------
 
@@ -108,8 +97,8 @@ with urlopen(full_url)  as response:
 # -------------------------------------------------------------------------
 #Ingest NHS region ONS to ODS code mapping table, and map to NHS region dataframe generated from the CCG boundary GeoJSON
 
-column_ons_code = nhs_regions_geojson['fields'][1]['name'].lower()
-column_region_name = nhs_regions_geojson['fields'][2]['name'].lower()
+column_ons_code = ons_geoportal_geojson['fields'][1]['name'].lower()
+column_region_name = ons_geoportal_geojson['fields'][2]['name'].lower()
 
 search_url = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/"
 url_1 = "https://services1.arcgis.com"
@@ -129,7 +118,7 @@ column_region_name = region_code_map_json['fields'][2]['name'].lower()
 region_code_map_df = region_code_map_df.iloc[:,:3]
 region_code_map_df.columns = region_code_map_df.columns.str.lower()
 region_code_map_df.rename(columns={'attributes.%s' %column_ons_code_1 :'ONS NHS region code', 'attributes.%s' %column_ods_code: 'ODS NHS region code', 'attributes.%s' %column_region_name: 'NHS region name'}, inplace=True)
-region_geojson_df = pd.json_normalize(nhs_regions_geojson['features'])
+region_geojson_df = pd.json_normalize(ons_geoportal_geojson['features'])
 region_geojson_df.columns = region_geojson_df.columns.str.lower()
 region_geojson_df_1 = region_geojson_df.iloc[:,1:2]
 region_geojson_df_1.rename(columns={'attributes.%s' %column_ons_code :'ONS NHS region code'}, inplace=True)
@@ -157,7 +146,7 @@ ods_mappped_df = pd.merge(mapped_region_geojson_df, ods_df_2, on='ODS NHS region
 #CCG boundary GeoJSON
 current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
 file_contents = io.StringIO()
-geojson.dump(nhs_regions_geojson, file_contents, ensure_ascii=False, indent=4)
+geojson.dump(ons_geoportal_geojson, file_contents, ensure_ascii=False, indent=4)
 datalake_upload(file_contents, CONNECTION_STRING, file_system, shapefile_sink_path+current_date_path, shapefile_sink_file)
 
 #CCG ONS to ODS code mapping table
