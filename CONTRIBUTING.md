@@ -1,5 +1,5 @@
 # Contributing
-We love contributions! We've compiled these docs to help you understand our contribution guidelines. If you still have questions, please [contact us](data@nhsx.nhs.uk), we'd be super happy to help.
+We love contributions! We've compiled these docs to help you understand our contribution guidelines. If you still have questions, please [contact us](mailto:data@nhsx.nhs.uk), we'd be super happy to help.
 
 ## Contents of this file
 
