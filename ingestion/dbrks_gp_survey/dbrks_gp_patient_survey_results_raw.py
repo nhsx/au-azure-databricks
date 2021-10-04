@@ -121,5 +121,5 @@ else:
 
 # Upload processed data to datalake
 file_contents = io.BytesIO()
-historical_dataframe.to_parquet(file_contents, engine="pyarrow", index=False)
+historical_dataframe.to_parquet(file_contents, engine="pyarrow")
 datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+latestFolder, sink_file)
