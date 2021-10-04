@@ -78,7 +78,7 @@ df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 df1 = df[['ODS Code', 'GP Practice (ODS Code)', 'Registered Patients', '% with nominated pharm', 'Date']]
 df1['% with nominated pharm'] = df1['% with nominated pharm'].str.replace("%", "")
 df1['% with nominated pharm'] = (pd.to_numeric(df1['% with nominated pharm'])/100)
-df1['Number of registered patients with a nominated pharmacy'] = df1['% with nominated pharm'] * pd.to_numeric(df1['Registered Patients'])
+df1['Number of registered patients with a nominated pharmacy'] = (df1['% with nominated pharm'] * pd.to_numeric(df1['Registered Patients'])).round()
 df2 = df1[['ODS Code', 'Number of registered patients with a nominated pharmacy', 'Registered Patients', '% with nominated pharm', 'Date']]	
 df2.rename(columns = {'ODS Code': 'Practice code', 'Registered Patients': 'Number of registered patients', '% with nominated pharm':'% of registered patients with a nominated pharmacy'}, inplace=True)
 df2.index.name = "Unique ID"
