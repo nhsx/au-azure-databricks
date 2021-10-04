@@ -81,9 +81,7 @@ sink_file = config_JSON['pipeline']['raw']['appended_file']
 # COMMAND ----------
 
 #Ingestion of raw .csv from NHSD webpage for metrics:
-# M083: % patients with nominated pharmacy
-# M084: EPS utilisation
-# M085: ERD utilisation (% all items)
+
 url = "https://digital.nhs.uk/data-and-information/data-tools-and-services/tools-for-accessing-data/deployment-and-utilisation-hub/electronic-prescription-service-deployment-and-utilisation-data" 
 response = urlreq.urlopen(url)
 soup = BeautifulSoup(response.read(), "lxml")
