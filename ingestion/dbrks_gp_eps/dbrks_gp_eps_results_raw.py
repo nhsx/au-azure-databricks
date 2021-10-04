@@ -8,16 +8,16 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_gp_patient_survey_results_raw.py
+FILE:           dbrks_gp_eps_results_raw.py
 DESCRIPTION:
                 Databricks notebook with code to append new raw data to historical
-                data for the NHSX Analyticus unit metrics within the GP patient survey
+                data for the NHSX Analyticus unit metrics within the Electronic Prescription Service (EPS)
                 topic
 USAGE:
                 ...
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        02 Sept 2021
+CREATED:        04 Oct. 2021
 VERSION:        0.0.1
 """
 
@@ -25,7 +25,7 @@ VERSION:        0.0.1
 
 # Install libs
 # -------------------------------------------------------------------------
-%pip install pandas pathlib azure-storage-file-datalake numpy pyarrow==5.0.*
+%pip install geojson==2.5.* tabulate requests pandas pathlib azure-storage-file-datalake beautifulsoup4 numpy urllib3 lxml regex pyarrow==5.0.*
 
 # COMMAND ----------
 
@@ -41,7 +41,10 @@ import json
 # 3rd party:
 import pandas as pd
 import numpy as np
+import requests
 from pathlib import Path
+from urllib import request as urlreq
+from bs4 import BeautifulSoup
 from azure.storage.filedatalake import DataLakeServiceClient
 
 # Connect to Azure datalake
@@ -58,7 +61,7 @@ CONNECTION_STRING = dbutils.secrets.get(scope="datalakefs", key="CONNECTION_STRI
 # Load JSON config from Azure datalake
 # -------------------------------------------------------------------------
 file_path_config = "/config/pipelines/nhsx-au-analytics/"
-file_name_config = "config_gp_patient_survey_dbrks.json"
+file_name_config = "config_gp_eps_dbrks.json"
 file_system_config = "nhsxdatalakesagen2fsprod"
 config_JSON = datalake_download(CONNECTION_STRING, file_system_config, file_path_config, file_name_config)
 config_JSON = json.loads(io.BytesIO(config_JSON).read())
@@ -77,41 +80,43 @@ sink_file = config_JSON['pipeline']['raw']['appended_file']
 
 # COMMAND ----------
 
-# Processing
-# -------------------------------------------------------------------------
-# Pull latest raw dataset
-latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, new_source_path)
-new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path+latestFolder, new_source_file)
-fields = ['Practice_Code', 'Q114base', 'Q114_5', 'Q101base', 'Q101_4', 'q73base', 'Q73_1234base', 'q73_12' ]
-new_dataframe = pd.read_csv(io.BytesIO(new_dataset), usecols=fields)
-new_dataframe.rename(columns = {'Practice_Code': 'Practice code', 
-                           'Q114base': 'M090_denominator', 
-                           'Q114_5': 'M090_numerator',
-                           'Q101base': 'M091_denominator',
-                           'Q101_4': 'M091_numerator',
-                           'q73base': 'M092_denominator', 
-                           'Q73_1234base': 'M092_numerator_M093_denominator', 
-                           'q73_12': 'M093_numerator'},
-                           inplace=True)
-new_dataframe.insert(0,'Date','')
-new_dataframe.insert(0,'Collection end date','')
-new_dataframe.insert(0,'Collection start date','')
-date = '2021-01-01'
-new_dataframe["Date"] = date
-new_dataframe["Collection start date"] = "2021-01-01"
-new_dataframe["Collection end date"] = "2021-03-01"
+#Ingestion of raw .csv from NHSD webpage for metrics:
+# M083: % patients with nominated pharmacy
+# M084: EPS utilisation
+# M085: ERD utilisation (% all items)
+url = "https://digital.nhs.uk/data-and-information/data-tools-and-services/tools-for-accessing-data/deployment-and-utilisation-hub/electronic-prescription-service-deployment-and-utilisation-data" 
+response = urlreq.urlopen(url)
+soup = BeautifulSoup(response.read(), "lxml")
+data = soup.select_one("a[href*='erd-data']")
+csv_url = 'https:' +  data['href']
+eps_df_snapshot = pd.read_csv(csv_url)
 
-# pull historical dataset
+#Extract date from csv URL
+date_from_csv = csv_url.partition("erd-data-")[2].partition(".csv")[0].title()
+date_from_csv_final = datetime.strptime(date_from_csv, '%B-%Y').strftime('%Y-%m-%d')
+
+#Add column date to table
+eps_df_snapshot['Date'] = date_from_csv_final
+
+# COMMAND ----------
+
+# Upload raw data snapshot to datalake
+current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
+file_contents = io.StringIO()
+eps_df_snapshot.to_csv(file_contents)
+datalake_upload(file_contents, CONNECTION_STRING, file_system, new_source_path+current_date_path, new_source_file)
+
+# COMMAND ----------
+
+#Pull historical dataset
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, historical_source_path)
 historical_dataset = datalake_download(CONNECTION_STRING, file_system, historical_source_path+latestFolder, historical_source_file)
 historical_dataframe = pd.read_parquet(io.BytesIO(historical_dataset), engine="pyarrow")
 
-# COMMAND ----------
-
 # Append new data to historical data
-# -------------------------------------------------------------------------
-if date not in historical_dataframe["Date"].values:
-  historical_dataframe = historical_dataframe.append(new_dataframe)
+# -----------------------------------------------------------------------
+if date_from_csv_final not in historical_dataframe.values:
+  historical_dataframe = historical_dataframe.append(eps_df_snapshot)
   historical_dataframe = historical_dataframe.reset_index(drop=True)
   historical_dataframe.index.name = "Unique ID"
 else:
@@ -121,5 +126,5 @@ else:
 
 # Upload processed data to datalake
 file_contents = io.BytesIO()
-historical_dataframe.to_parquet(file_contents, engine="pyarrow", index=False)
-datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+latestFolder, sink_file)
+historical_dataframe.to_parquet(file_contents, engine="pyarrow")
+datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, sink_file)
