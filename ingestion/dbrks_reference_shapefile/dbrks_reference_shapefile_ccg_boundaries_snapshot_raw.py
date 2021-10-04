@@ -106,7 +106,7 @@ search_url = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services
 url_start = "https://services1.arcgis.com"
 string_filter = "CCG_APR"
 ccg_code_map_json = ons_geoportal_file_download(search_url, url_start, string_filter)
-ccg_code_map_df = pd.json_normalize(stp_code_map_json['features'])
+ccg_code_map_df = pd.json_normalize(ccg_code_map_json['features'])
 
 #Define column title variables 
 column_ods_code = ccg_code_map_json['fields'][1]['name'].lower()
