@@ -8,14 +8,14 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_pomi_appointments_func_enabled_month_count_prop.py
+FILE:           dbrks_pomi_patient_record_func_month_count_prop.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric: No. and % of GP practices with appointment functionality enabled (M050)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric: No. and % of patients registered for detailed coded record functionality (M0142)
 USAGE:
                 ...
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        01 Sept 2021
+CREATED:        07 Oct. 2021
 VERSION:        0.0.1
 """
 
@@ -66,8 +66,8 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 source_path = config_JSON['pipeline']['project']['source_path']
 source_file = config_JSON['pipeline']['project']['source_file']
 file_system = config_JSON['pipeline']['adl_file_system']
-sink_path = config_JSON['pipeline']['project']['databricks'][2]['sink_path']
-sink_file = config_JSON['pipeline']['project']['databricks'][2]['sink_file']  
+sink_path = config_JSON['pipeline']['project']['databricks'][10]['sink_path']
+sink_file = config_JSON['pipeline']['project']['databricks'][10]['sink_file']  
 
 # COMMAND ----------
 
@@ -75,34 +75,18 @@ sink_file = config_JSON['pipeline']['project']['databricks'][2]['sink_file']
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
-df = df[df["Field"] == "Sys_Appts_Enbld"]
-df['Value'] = df['Value'].fillna(0).astype(int)
-def appointments_enabled(c):
-  if c['Value'] == 2:
-    return 1
-  else:
-    return 0
-df['GP practice appointment functionality enabled'] = df.apply(appointments_enabled, axis=1)
-df["Report_Period_End"] = df["Report_Period_End"].astype("datetime64[ns]")
-df1 = df.sort_values("Report_Period_End")
-df2 = df1.reset_index(drop = True)
-df2 = df2.drop(columns={"Field", 
-                        "Region_Code", 
-                        "Value",
-                        "CCG_Code", 
-                        "Subregion_Code",
-                        "System_Supplier", 
-                        "Effective_Snapshot_Date", 
-                        "DataSourceFileForThisSnapshot_Version", 
-                        "Report_Period_Length", 
-                        "Unique_ID", 
-                        "AuditKey"})
-df2.rename(columns={
-    "Report_Period_End": "Date",
-    "Practice_Code": "Practice code"},
-             inplace=True)
-df2.index.name = "Unique ID"
-df_processed = df2.copy()
+df1 = df[['Report_Period_End', 'Practice_Code', 'Field', 'Value']]
+df_num = df1[df1["Field"] == "Pat_DetCodeRec_Enbld"]
+df_num_1 = df_num.rename(columns = {'Value': 'Number of patients registered for detailed coded record functionality'}).drop(columns = ['Field']).reset_index(drop = True)
+df_denom = df1[df1["Field"] == "patient_list_size"]
+df_denom_1 = df_denom.rename(columns = {'Value': 'Number of registered patients'}).drop(columns = ['Field']).reset_index(drop = True)
+df_join = pd.merge(df_num_1, df_denom_1,  how='left', left_on=['Report_Period_End','Practice_Code'], right_on = ['Report_Period_End','Practice_Code'])
+df_join["Percent of patients registered for detailed coded record functionality"] = df_join["Number of patients registered for detailed coded record functionality"]/df_join["Number of registered patients"]
+df_join.rename(columns={"Report_Period_End": "Date", "Practice_Code": "Practice code"}, inplace=True)
+df_join_1 = df_join[~(df_join['Percent of patients registered for detailed coded record functionality'] > 1)].reset_index(drop = True)
+df_join_2 = df_join_1.round(4)
+df_join_2.index.name = "Unique ID"
+df_processed = df_join_2.copy()
 
 # COMMAND ----------
 
