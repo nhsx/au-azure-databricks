@@ -84,18 +84,16 @@ df1['Count'] = 1
 df2 = df1.groupby(["workflow", "_time"]).sum().reset_index()
 df3 = df2.set_index(['_time','workflow']).unstack()['Count'].reset_index().fillna(0)
 df3[["TOC_FHIR_EC_DISCH_ACK","TOC_FHIR_IP_DISCH_ACK","TOC_FHIR_MH_DISCH_ACK", "TOC_FHIR_OP_ATTEN_ACK"]] = df3[["TOC_FHIR_EC_DISCH_ACK","TOC_FHIR_IP_DISCH_ACK","TOC_FHIR_MH_DISCH_ACK", "TOC_FHIR_OP_ATTEN_ACK"]].div(2).apply(np.floor)
-df4 = df3.rename(columns = {'_time': 'Date', 
+df4 = df3.rename(columns = {'_time': 'Date (week commencing)', 
                             'TOC_FHIR_EC_DISCH_ACK': 'Number of successful FHIR ToC emergency care discharge messages',
                             'TOC_FHIR_IP_DISCH_ACK': 'Number of successful FHIR ToC inpatient discharge messages', 
                             'TOC_FHIR_MH_DISCH_ACK': 'Number of successful FHIR ToC mental health discharge messages',
                             'TOC_FHIR_OP_ATTEN_ACK': 'Number of successful FHIR ToC outpatient discharge messages'})
 df4.columns.name = None
 df4.index.name = "Unique ID"
+df4['Date (week commencing)'] = df4['Date (week commencing)'].astype(str) + '-1'
+df4['Date (week commencing)'] = pd.to_datetime(df4['Date (week commencing)'],format= '%G-W%V-%u')
 df_processed = df4.copy()
-
-# COMMAND ----------
-
-df_processed
 
 # COMMAND ----------
 
