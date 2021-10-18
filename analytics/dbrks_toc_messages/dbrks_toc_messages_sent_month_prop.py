@@ -10,13 +10,13 @@
 """
 FILE:           dbrks_toc_messages_sent_month_prop.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric: No. transfer of care digital messages sent to GPs per 1,000 discharges (acute and mental health) (M030B)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric: No. transfer of care digital messages sent to GPs per 1,000 discharges (inpatient and mental health) (M030B)
 USAGE:
                 ...
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        07 October 2021
-VERSION:        0.0.1
+CREATED:        18 Oct. 2021
+VERSION:        0.0.2
 """
 
 # COMMAND ----------
@@ -84,15 +84,16 @@ df_denom_1 = df_denom.groupby(df_denom['Discharge_Date'].dt.strftime('%Y-%m'))['
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
-df1 = df[['_time', 'workflow']]
+df1 = df[['_time', 'workflow', 'senderOdsCode', 'recipientOdsCode']]
 df1 = df1[df1['workflow'].str.contains('ACK')].reset_index(drop = True)
-df1['_time'] = df1['_time'].dt.strftime('%Y-%m')
 df1['Count'] = 1
-df2 = df1.groupby(["workflow", "_time"]).sum().reset_index()
+df1['_time'] = df1['_time'].dt.strftime('%Y-%m')
+df2 = df1.groupby(['_time', 'workflow', 'senderOdsCode', 'recipientOdsCode']).sum().reset_index()
+df2['Count'] = df2['Count'].div(2).apply(np.floor)
+df2 = df2.drop(columns = ["senderOdsCode", "recipientOdsCode"]).groupby(["workflow", "_time"]).sum().reset_index()
 df3 = df2.set_index(['_time','workflow']).unstack()['Count'].reset_index().fillna(0)
-df3[["TOC_FHIR_EC_DISCH_ACK","TOC_FHIR_IP_DISCH_ACK","TOC_FHIR_MH_DISCH_ACK", "TOC_FHIR_OP_ATTEN_ACK"]] = df3[["TOC_FHIR_EC_DISCH_ACK","TOC_FHIR_IP_DISCH_ACK","TOC_FHIR_MH_DISCH_ACK", "TOC_FHIR_OP_ATTEN_ACK"]].div(2).apply(np.floor)
 df3.columns.name = None
-df3["Number of successful FHIR ToC mental health and emergency care discharge messages"] = df3["TOC_FHIR_EC_DISCH_ACK"] + df3["TOC_FHIR_MH_DISCH_ACK"]
+df3["Number of successful FHIR ToC mental health and inpatient discharge messages"] = df3["TOC_FHIR_IP_DISCH_ACK"] + df3["TOC_FHIR_MH_DISCH_ACK"]
 df4 = df3.drop(columns=['TOC_FHIR_IP_DISCH_ACK', 'TOC_FHIR_OP_ATTEN_ACK', 'TOC_FHIR_EC_DISCH_ACK', 'TOC_FHIR_MH_DISCH_ACK'])
 
 # COMMAND ----------
@@ -100,7 +101,7 @@ df4 = df3.drop(columns=['TOC_FHIR_IP_DISCH_ACK', 'TOC_FHIR_OP_ATTEN_ACK', 'TOC_F
 #Joined data processing
 df_join = df_denom_1.join(df4, how='left', lsuffix='Discharge_Date', rsuffix='_time')
 df_join_1 = df_join.drop(columns = ['_time']).rename(columns = {'Discharge_Date': 'Date', 'APC_Distcharges': 'Number of admitted patient care discharges'})
-df_join_1['No. of successful FHIR ToC mental health and emergency care discharge messages sent to GPs per 1,000 admitted patient care discharges'] = df_join_1['Number of successful FHIR ToC mental health and emergency care discharge messages']/ (df_join_1['Number of admitted patient care discharges']/1000)
+df_join_1['Inpatient and day case FHIR ToC utilisation (per 1,000 discharges)'] = df_join_1['Number of successful FHIR ToC mental health and inpatient discharge messages']/ (df_join_1['Number of admitted patient care discharges']/1000)
 df_join_2 = df_join_1.round(2)
 df_join_2.index.name = "Unique ID"
 df_processed = df_join_2.copy()
