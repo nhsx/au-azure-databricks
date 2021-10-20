@@ -71,3 +71,15 @@ def ons_geoportal_file_download(search_url, url_start, string_filter):
   with urlopen(full_url)  as response:
       json_file = json.load(response)
   return json_file
+
+def datalake_listContents(CONNECTION_STRING, file_system, source_path):
+  try:
+    service_client = DataLakeServiceClient.from_connection_string(CONNECTION_STRING)
+    file_system_client = service_client.get_file_system_client(file_system=file_system)
+    folder_path = file_system_client.get_paths(path=source_path)
+    file_list = []
+    for path in folder_path:
+      file_list.append(path.name.replace(source_path.strip("/"), "").lstrip("/").rsplit("/", 1)[0])
+    return file_list
+  except Exception as e:
+    print(e)

@@ -74,8 +74,8 @@ file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolde
 fields = ['Date', 'Practice code', 'M092_denominator', 'M092_numerator_M093_denominator']
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow", columns=fields)
 df1 = df.rename(columns = {'M092_denominator': 'Total number of responses', 'M092_numerator_M093_denominator': 'Number of patients reporting having tried to use their GP practices website'})
+df1['Number of patients reporting having tried to use their GP practices website'].loc[df1['Number of patients reporting having tried to use their GP practices website'] < 0] = np.nan 
 df1['Percent of patients reporting having tried to use their GP practices website'] = df1['Number of patients reporting having tried to use their GP practices website']/df1['Total number of responses']
-df1['Percent of patients reporting having tried to use their GP practices website'].loc[df1['Percent of patients reporting having tried to use their GP practices website'] < 0] = np.nan  
 df2 = df1.reset_index(drop = True)
 df2.index.name = "Unique ID"
 df_processed = df2.copy()

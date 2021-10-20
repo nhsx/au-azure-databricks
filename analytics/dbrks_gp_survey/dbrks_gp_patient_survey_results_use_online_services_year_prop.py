@@ -8,9 +8,9 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_gp_patient_survey_results_nouse_online_services_year_prop.py
+FILE:           dbrks_gp_patient_survey_results_use_online_services_year_prop.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric: % of patients reporting not using GP practice online services (M090)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric: % of patients reporting using one or more of the GP practice online services (M090)
 USAGE:
                 ...
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli
@@ -74,11 +74,13 @@ file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolde
 fields = ['Date', 'Practice code', 'M090_denominator', 'M090_numerator']
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow", columns = fields)
 df1 = df.rename(columns = {'M090_denominator': 'Total number of responses', 'M090_numerator': 'Number of patients reporting not using GP practice online services'})
-df1['Percent of patients reporting not using GP practice online services'] = df1['Number of patients reporting not using GP practice online services']/df1['Total number of responses']
-df1['Percent of patients reporting not using GP practice online services'].loc[df1['Percent of patients reporting not using GP practice online services'] < 0] = np.nan 
-df2 = df1.reset_index(drop = True)
-df2.index.name = "Unique ID"
-df_processed = df2.copy()
+df1['Number of patients reporting not using GP practice online services'].loc[df1['Number of patients reporting not using GP practice online services'] < 0] = np.nan 
+df1['Number of patients reporting using GP practice online services'] = df1['Total number of responses'] - df1['Number of patients reporting not using GP practice online services']
+df1['Percent of patients reporting using GP practice online services'] = df1['Number of patients reporting using GP practice online services']/df1['Total number of responses']
+df2 = df1.drop(columns = ["Number of patients reporting not using GP practice online services"])
+df3 = df2.reset_index(drop = True)
+df3.index.name = "Unique ID"
+df_processed = df3.copy()
 
 # COMMAND ----------
 
