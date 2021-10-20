@@ -75,9 +75,9 @@ fields = ['Date', 'Practice code', 'M093_numerator', 'M092_numerator_M093_denomi
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow", columns = fields)
 df1 = df.rename(columns = {'M092_numerator_M093_denominator': 'Number of patients reporting having tried to use their GP practices website', 
                            'M093_numerator': 'Number of patients reporting that their GP practice website was easy to use'})
+df1['Number of patients reporting having tried to use their GP practices website'].loc[df1['Number of patients reporting having tried to use their GP practices website'] < 0] = np.nan  
+df1['Number of patients reporting that their GP practice website was easy to use'].loc[df1['Number of patients reporting that their GP practice website was easy to use'] < 0] = np.nan
 df1['Percent of patients reporting that their GP practice website was easy to use'] = df1['Number of patients reporting that their GP practice website was easy to use']/df1['Number of patients reporting having tried to use their GP practices website']
-df1['Percent of patients reporting that their GP practice website was easy to use'].loc[df1['Number of patients reporting having tried to use their GP practices website'] < 0] = np.nan  
-df1['Percent of patients reporting that their GP practice website was easy to use'].loc[df1['Percent of patients reporting that their GP practice website was easy to use'] < 0] = np.nan
 df2 = df1.reset_index(drop = True)
 df2.index.name = "Unique ID"
 df_processed = df2.copy()
