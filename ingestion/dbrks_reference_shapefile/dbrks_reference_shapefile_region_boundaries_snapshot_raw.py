@@ -90,7 +90,7 @@ markdown_sink_file = config_JSON['pipeline']['raw']['databricks'][2]["markdown_s
 
 search_url = "https://ons-inspire.esriuk.com/arcgis/rest/services/Health_Boundaries/"
 url_start = "https://ons-inspire.esriuk.com"
-string_filter = "NHS_England_Regions"
+string_filter = "NHS_England_Regions_April_2019" #Placeholder as 2020 file at data quality issues - normally: string_filter = "NHS_England_Regions"
 ons_geoportal_geojson = ons_geoportal_file_download(search_url, url_start, string_filter)
 
 # COMMAND ----------
