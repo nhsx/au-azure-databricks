@@ -10,7 +10,7 @@
 """
 FILE:           dbrks_reference_shapefile_stp_boundaries_snapshot_raw.py
 DESCRIPTION:
-                Databricks notebook with code to ingest a GeoJSON file with NHS region boundaries from the ONS Geo Portal
+                Databricks notebook with code to ingest a GeoJSON file with NHS STP boundaries from the ONS Geo Portal
                 for NHSX Analytics Unit dashboard projects
 USAGE:         
 CONTRIBUTORS:   Mattia Ficarelli and Craig Shenton
@@ -92,7 +92,7 @@ ons_geoportal_geojson = ons_geoportal_file_download(search_url, url_start, strin
 
 # Processing
 # -------------------------------------------------------------------------
-#Ingest STP ONS to ODS code mapping table, and map to CCG dataframe generated from the STP boundary GeoJSON
+#Ingest STP ONS to ODS code mapping table, and map to STP dataframe generated from the STP boundary GeoJSON
 
 column_ons_code = ons_geoportal_geojson['fields'][1]['name'].lower()
 column_stp_name = ons_geoportal_geojson['fields'][2]['name'].lower()

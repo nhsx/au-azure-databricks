@@ -97,7 +97,7 @@ ons_geoportal_geojson = ons_geoportal_file_download(search_url, url_start, strin
 
 # Processing
 # -------------------------------------------------------------------------
-#Ingest NHS region ONS to ODS code mapping table, and map to NHS region dataframe generated from the CCG boundary GeoJSON
+#Ingest NHS region ONS to ODS code mapping table, and map to NHS region dataframe generated from the NHS region boundary GeoJSON
 
 column_ons_code = ons_geoportal_geojson['fields'][1]['name'].lower()
 column_region_name = ons_geoportal_geojson['fields'][2]['name'].lower()
@@ -146,18 +146,18 @@ ods_mappped_df = pd.merge(mapped_region_geojson_df, ods_df_2, on='ODS NHS region
 
 # Upload processed data to datalake
 # -------------------------------------------------------------------------
-#CCG boundary GeoJSON
+#NHS region boundary GeoJSON
 current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
 file_contents = io.StringIO()
 geojson.dump(ons_geoportal_geojson, file_contents, ensure_ascii=False, indent=4)
 datalake_upload(file_contents, CONNECTION_STRING, file_system, shapefile_sink_path+current_date_path, shapefile_sink_file)
 
-#CCG ONS to ODS code mapping table
+#NHS region ONS to ODS code mapping table
 file_contents = io.BytesIO()
 mapped_region_geojson_df.to_parquet(file_contents, engine="pyarrow")
 datalake_upload(file_contents, CONNECTION_STRING, file_system, code_maping_sink_path+current_date_path, code_maping_sink_file)
 
-#CCG ODS code mapping to CCG shapefile documentation
+#NHS region ODS code mapping to NHS region shapefile documentation
 file_contents = io.StringIO()
 ods_mappped_df.to_markdown(file_contents)
 datalake_upload(file_contents, CONNECTION_STRING, file_system, markdown_sink_path+current_date_path, markdown_sink_file)
