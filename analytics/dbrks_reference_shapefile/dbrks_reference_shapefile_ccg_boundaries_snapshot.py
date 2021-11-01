@@ -10,7 +10,8 @@
 """
 FILE:           dbrks_reference_shapefile_ccg_boundaries_snapshot_raw.py
 DESCRIPTION:
-                Databricks notebook with code to process a GeoJSON file from the ONS Geo Portal for CCG boundaries into tablular format
+                Databricks notebook with code to process a GeoJSON file
+                from the ONS Geo Portal for CCG boundaries into tablular format
                 for NHSX Analytics Unit dashboard projects
 USAGE:         
 CONTRIBUTORS:   Mattia Ficarelli and Craig Shenton

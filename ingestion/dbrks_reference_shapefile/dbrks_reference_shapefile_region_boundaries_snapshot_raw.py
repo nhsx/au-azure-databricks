@@ -23,7 +23,7 @@ VERSION:        0.0.1
 
 # Install libs
 # -------------------------------------------------------------------------
-%pip install geojson==2.5.* tabulate requests pandas pathlib azure-storage-file-datalake beautifulsoup4 numpy urllib3 lxml regex pyarrow==5.0.*
+%pip install geojson==2.5.* tabulate requests pandas pathlib azure-storage-file-datalake beautifulsoup4 numpy urllib3 lxml regex pyarrow==5.0.* geopandas shapely
 
 # COMMAND ----------
 
@@ -48,6 +48,11 @@ from urllib.request import urlopen
 from urllib import request as urlreq
 from bs4 import BeautifulSoup
 import geojson
+import geopandas as gpd
+from shapely.geometry import Point, Polygon, shape
+from shapely import wkb, wkt
+import shapely.speedups
+shapely.speedups.enable()
 # Connect to Azure datalake
 # -------------------------------------------------------------------------
 # !env from databricks secrets
