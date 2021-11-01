@@ -71,7 +71,6 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 # -------------------------------------------------------------------------
 file_system = config_JSON['pipeline']['adl_file_system']
 new_source_path =  config_JSON['pipeline']['raw']['snapshot_source_path']
-new_source_file = config_JSON['pipeline']['raw']['snapshot_source_file']
 historical_source_path = config_JSON['pipeline']['raw']['appended_path']
 historical_source_file = config_JSON['pipeline']['raw']['appended_file']
 sink_path = config_JSON['pipeline']['raw']['appended_path']
@@ -83,9 +82,12 @@ sink_file = config_JSON['pipeline']['raw']['appended_file']
 # Pull new snapshot dataset
 # -------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, new_source_path)
-new_source_file = new_source_file %latestFolder
-new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path+latestFolder, new_source_file.replace('/', ''))
-new_dataframe = pd.read_csv(io.BytesIO(new_dataset))
+toc_messages_file_name_list = datalake_listContents(CONNECTION_STRING, file_system, new_source_path+latestFolder)
+toc_messages_file_name_list
+for new_source_file in toc_messages_file_name_list:
+  new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path+latestFolder, new_source_file)
+  df = pd.read_csv(io.BytesIO(new_dataset))
+  new_dataframe = df.append(df)
 
 # COMMAND ----------
 
