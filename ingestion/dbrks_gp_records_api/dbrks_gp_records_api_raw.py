@@ -17,7 +17,7 @@ USAGE:
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
 CREATED:        18 Oct. 2021
-VERSION:        0.0.1
+VERSION:        0.0.2
 """
 
 # COMMAND ----------
@@ -88,7 +88,7 @@ data = soup.findAll("p",attrs={"class": "nhsd-t-body",},)[2].text
 latestDate = search_dates(data)
 date = latestDate[0][1].strftime("%Y-%m-%d")
 results = []
-for pp in soup.select("div.nhsd-m-infographic__qualifying-info-box"):
+for pp in soup.select("div.nhsd-m-infographic__headline-box"):
   ptext = (
     pp.text.replace(",", "")
       .replace("%", "")
