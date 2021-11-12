@@ -122,9 +122,17 @@ df_M030B = df_join_2.copy()
 
 # COMMAND ----------
 
+#Add link to cover sheet
+d = {'Cover Sheet': ['For more information on the data within this file refer to cover_sheet_toc_messages_v001']}
+df_cover = pd.DataFrame(data = d)
+df_cover['Cover Sheet Link'] = '=HYPERLINK("https://docs.google.com/spreadsheets/d/1NN21Gt2ejSoQ9KMtedra3Ve5BBFwLVm0/edit#gid=821869811", "Link")'
+
+# COMMAND ----------
+
 #Upload processed data to datalake
 file_contents = io.BytesIO()
 with pd.ExcelWriter(file_contents) as writer:
   df_M030A.to_excel(writer, sheet_name='ToC messages count')
   df_M030B.to_excel(writer, sheet_name='ToC messages proportion')
+  df_cover.to_excel(writer, sheet_name='Cover sheet')
 datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+latestFolder, sink_file)
