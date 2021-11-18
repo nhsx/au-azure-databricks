@@ -132,7 +132,19 @@ df_cover['Cover Sheet Link'] = '=HYPERLINK("https://docs.google.com/spreadsheets
 #Upload processed data to datalake
 file_contents = io.BytesIO()
 with pd.ExcelWriter(file_contents) as writer:
-  df_M030A.to_excel(writer, sheet_name='ToC messages count')
-  df_M030B.to_excel(writer, sheet_name='ToC messages proportion')
-  df_cover.to_excel(writer, sheet_name='Cover sheet')
+  df_cover.to_excel(writer, sheet_name='Cover sheet', index=False)
+  df_M030A.to_excel(writer, sheet_name='ToC messages count', index=False)
+  df_M030B.to_excel(writer, sheet_name='ToC messages proportion', index=False)
+  
+  # formatting excel file to add in text wrapping
+  workbook=writer.book
+  worksheet_1 = writer.sheets['Cover sheet']
+  worksheet_2 = writer.sheets['ToC messages count']
+  worksheet_3 = writer.sheets['ToC messages proportion']
+  format = workbook.add_format({'text_wrap': True, 'align': 'center'})
+  worksheet_1.set_column('A:E', 50, format)
+  worksheet_2.set_column('A:E', 70, format)
+  worksheet_3.set_column('A:E', 70, format)
+  
+
 datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+latestFolder, sink_file)
