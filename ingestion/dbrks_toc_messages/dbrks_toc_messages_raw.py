@@ -83,11 +83,9 @@ sink_file = config_JSON['pipeline']['raw']['appended_file']
 # -------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, new_source_path)
 toc_messages_file_name_list = datalake_listContents(CONNECTION_STRING, file_system, new_source_path+latestFolder)
-toc_messages_file_name_list
 for new_source_file in toc_messages_file_name_list:
   new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path+latestFolder, new_source_file)
-  df = pd.read_csv(io.BytesIO(new_dataset))
-  new_dataframe = df.append(df)
+  new_dataframe = pd.read_csv(io.BytesIO(new_dataset))
 
 # COMMAND ----------
 
@@ -100,11 +98,11 @@ historical_dataframe = pd.read_parquet(io.BytesIO(historical_dataset), engine="p
 # Append new data to historical data
 # -----------------------------------------------------------------------
 date_from_new_dataframe = pd.to_datetime(new_dataframe['_time']).values.max()
-if date_from_new_dataframe != historical_dataframe['_time'].values.max():
+if date_from_new_dataframe != pd.to_datetime(historical_dataframe['_time']).values.max():
   historical_dataframe = historical_dataframe.append(new_dataframe)
-  historical_dataframe = historical_dataframe.reset_index(drop=True)
   historical_dataframe['_time'] = pd.to_datetime(historical_dataframe['_time'])
   historical_dataframe = historical_dataframe.sort_values(by=['_time'])
+  historical_dataframe = historical_dataframe.reset_index(drop=True)
 else:
   print("data already exists")
 
