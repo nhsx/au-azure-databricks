@@ -79,7 +79,7 @@ df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 df1 = df[['_time', 'workflow', 'senderOdsCode', 'recipientOdsCode']]
 df1 = df1[df1['workflow'].str.contains('ACK')].reset_index(drop = True)
 df1['Count'] = 1
-df1['_time'] = df1['_time'].dt.strftime("%Y-W%W")
+df1['_time'] = pd.to_datetime(df1['_time']).dt.strftime("%Y-W%W")
 df2 = df1.groupby(['_time', 'workflow', 'senderOdsCode', 'recipientOdsCode']).sum().reset_index()
 df2['Count'] = df2['Count'].div(2).apply(np.floor)
 df2 = df2.drop(columns = ["senderOdsCode", "recipientOdsCode"]).groupby(["workflow", "_time"]).sum().reset_index()
