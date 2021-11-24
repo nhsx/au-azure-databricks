@@ -10,7 +10,7 @@
 """
 FILE:           dbrks_primarycare_gp_it_standards_month_prop.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric: Proportion of GP practices compliant with IT standards (*Cyper Security) (M015)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric: Proportion of GP practices compliant with IT standards (*Cyber Security) (M015)
 USAGE:
                 ...
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli ,Everistus Oputa
