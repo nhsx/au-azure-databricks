@@ -90,7 +90,7 @@ df2 = df2.drop(columns = ["senderOdsCode", "recipientOdsCode"]).groupby(["workfl
 df3 = df2.set_index(['_time','workflow']).unstack()['Count'].reset_index().fillna(0)
 df4 = df3.rename(columns = {'_time': 'Date', 
                             'TOC_FHIR_EC_DISCH_ACK': 'Number of successful FHIR ToC emergency care discharge messages',
-                            'TOC_FHIR_IP_DISCH_ACK': 'Number of successful FHIR ToC inpatient discharge messages',
+                            'TOC_FHIR_IP_DISCH_ACK': 'Number of successful FHIR ToC acute admitted patient care discharge messages',
                             'TOC_FHIR_MH_DISCH_ACK': 'Number of successful FHIR ToC mental health discharge messages',
                             'TOC_FHIR_OP_ATTEN_ACK': 'Number of successful FHIR ToC outpatient clinic attendance messages'})
 df4.columns.name = None
@@ -109,13 +109,13 @@ df_denom_1 = df_denom.groupby(df_denom['Discharge_Date'].dt.strftime('%Y-%m'))['
 
 #Numerator data ingestion and processing
 df5 = df3.copy()
-df5["Number of successful FHIR ToC inpatient discharge messages"] = df5["TOC_FHIR_IP_DISCH_ACK"] 
+df5["Number of successful FHIR ToC acute admitted patient care discharge messages"] = df5["TOC_FHIR_IP_DISCH_ACK"] 
 df6 = df5.drop(columns=['TOC_FHIR_IP_DISCH_ACK', 'TOC_FHIR_OP_ATTEN_ACK', 'TOC_FHIR_EC_DISCH_ACK', 'TOC_FHIR_MH_DISCH_ACK'])
 
 #Joined data processing
 df_join = df_denom_1.join(df6, how='left', lsuffix='Discharge_Date', rsuffix='_time')
 df_join_1 = df_join.drop(columns = ['_time']).rename(columns = {'Discharge_Date': 'Date', 'APC_Distcharges': 'Number of admitted patient care discharges (excluding mental health related discharges)'})
-df_join_1['Inpatient and day case FHIR ToC utilisation (per 1,000 discharges)'] = df_join_1["Number of successful FHIR ToC inpatient discharge messages"]/ (df_join_1['Number of admitted patient care discharges (excluding mental health related discharges)']/1000)
+df_join_1['Acute admitted patient care FHIR ToC utilisation (per 1,000 discharges)'] = df_join_1["Number of successful FHIR ToC acute admitted patient care discharge messages"]/ (df_join_1['Number of admitted patient care discharges (excluding mental health related discharges)']/1000)
 df_join_2 = df_join_1.round(2)
 df_join_2.index.name = "Unique ID"
 df_M030B = df_join_2.copy()
