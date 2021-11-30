@@ -95,6 +95,8 @@ df4 = df3.rename(columns = {'_time': 'Date',
                             'TOC_FHIR_OP_ATTEN_ACK': 'Number of successful FHIR ToC outpatient clinic attendance messages'})
 df4.columns.name = None
 df4.index.name = "Unique ID"
+if df4['Date'].iloc[-1] == datetime.now().strftime("%Y-%m"):
+  df4.drop(df4.tail(1).index,inplace=True)
 df_M030A = df4.copy() 
 
 # COMMAND ----------
