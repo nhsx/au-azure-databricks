@@ -8,14 +8,14 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           cybersecurity_dspt_nhs_standards_month_count_prop.py
+FILE:           cybersecurity_dspt_nhs_csu_ccg_standards_month_count_prop.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric: M020_M021  (Number and percent of Trusts, CSUs and CCGs registered for DSPT assessment, that meet or exceed the DSPT standard)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric: M020_M021  (Number and percent of CSUs and CCGs registered for DSPT assessment, that meet or exceed the DSPT standard)
 USAGE:
                 ...
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli, Chris Todd
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        25 Nov 2021
+CREATED:        1 Dec 2021
 VERSION:        0.0.1
 """
 
@@ -68,8 +68,8 @@ source_file = config_JSON['pipeline']['project']['source_file']
 reference_path = config_JSON['pipeline']['project']['reference_path']
 reference_file = config_JSON['pipeline']['project']['reference_file']
 file_system = config_JSON['pipeline']['adl_file_system']
-sink_path = config_JSON['pipeline']['project']['sink_path']
-sink_file = config_JSON['pipeline']['project']['sink_file']
+sink_path = config_JSON['pipeline']['project']['databricks'][1]['sink_path']
+sink_file = config_JSON['pipeline']['project']['databricks'][1]['sink_file']
 
 # COMMAND ----------
 
@@ -107,8 +107,7 @@ DSPT_ODS_selection = DSPT_ODS_selection[
 
 df_filtered = DSPT_ODS_selection[
 (DSPT_ODS_selection["Sector"] == "CLINICAL COMMISSIONING GROUP") |
-(DSPT_ODS_selection["Sector"] == "COMMISSIONING SUPPORT UNIT") |
-(DSPT_ODS_selection["Sector"] == "NHS TRUST")
+(DSPT_ODS_selection["Sector"] == "COMMISSIONING SUPPORT UNIT")
 ].reset_index(drop=True)
 
 df_count = df_filtered.groupby("Latest Status").size()
