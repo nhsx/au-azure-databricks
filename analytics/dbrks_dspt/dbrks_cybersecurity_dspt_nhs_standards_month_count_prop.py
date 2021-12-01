@@ -87,81 +87,54 @@ ODS_code_df = pd.read_parquet(io.BytesIO(reference_file), engine="pyarrow")
 
 date = datetime.now().strftime("%Y-%m-%d")
 date_string = str(date)
-#DSPT_df = pd.read_csv(tempFilePath + path + file_name)
-#ODS_code_df = pd.read_parquet(tempFilePath_ODS + "/" + latest_folder_ODS + "/" + file_name_ODS, engine = 'pyarrow')
 DSPT_df['Code'] = DSPT_df['Code'].str.upper()
 ODS_code_df['Close_Date'] = pd.to_datetime(ODS_code_df['Close_Date'], infer_datetime_format=True)
 ODS_code_df['Open_Date'] =  pd.to_datetime(ODS_code_df['Open_Date'], infer_datetime_format=True)
 DSPT_ODS = pd.merge(ODS_code_df, DSPT_df, how='outer', left_on="Code", right_on="Code")
-DSPT_ODS = (
-    DSPT_ODS.drop(
-        [
-            "Address_Line_1",
-            "Address_Line_2",
-            "Address_Line_3",
-            "Address_Line_4",
-            "Address_Line_5",
-            "Postcode",
-            "Import_Date",
-            "Created_Date",
-            "Commissioner (From ODS)",
-            "ODS_API_Role_Code",
-            "Source",
-            "Char_8_ASCII_Index",
-            "PK_NonStaticID",
-            "Organisation Name",
-            "Primary Sector"
-        ],
-        1,
-    )
-    .reset_index(drop=True)
-    .rename(
-        columns={
-            "ODS_API_Role_Name": "Sector",
-        }
-    )
-)
 
-DSPT_ODS["count"] = 1
+DSPT_ODS =DSPT_ODS.reset_index(drop=True).rename(columns={"ODS_API_Role_Name": "Sector",})
+
 close_date = datetime.strptime('2021-03-30 00:00:00', '%Y-%m-%d %H:%M:%S')
 open_date = datetime.strptime('2021-03-30 00:00:00', '%Y-%m-%d %H:%M:%S')
-DSPT_ODS_selection =  DSPT_ODS[DSPT_ODS['Close_Date'].isna()]
-DSPT_ODS_selection_2 =  DSPT_ODS[DSPT_ODS['Close_Date'] > close_date]
-DSPT_ODS_selection_3 = pd.concat([DSPT_ODS_selection, DSPT_ODS_selection_2])
-DSPT_ODS_selection_4 = DSPT_ODS_selection_3[DSPT_ODS_selection_3['Open_Date'] < open_date]
-DSPT_ODS_selection_5 = DSPT_ODS_selection_4[DSPT_ODS_selection_4["Name"].str.contains("COMMISSIONING HUB")==False]
-DSPT_ODS_selection_6 = DSPT_ODS_selection_5[DSPT_ODS_selection_5["Code"].str.contains("RT4|RQF|RYT|0DH|0AD|0AP|0CC|0CG|0CH|0DG")==False]
-DSPT_ODS_selection_7 = DSPT_ODS_selection_6.reset_index(drop=True)
-df_filtered_1 = DSPT_ODS_selection_7[DSPT_ODS_selection_7["Sector"] == "CLINICAL COMMISSIONING GROUP"]
-df_filtered_2 = DSPT_ODS_selection_7[DSPT_ODS_selection_7["Sector"] == "COMMISSIONING SUPPORT UNIT"]
-df_filtered_3 = DSPT_ODS_selection_7[DSPT_ODS_selection_7["Sector"] == "NHS TRUST"]
-df_filtered_4 = pd.concat([df_filtered_1, df_filtered_2, df_filtered_3])
-df_filtered_4 = df_filtered_4.reset_index(drop=True)
-df1 = df_filtered_4.groupby("Latest Status")["count"].sum()
-df_percent = (
-    df_filtered_4.groupby("Latest Status")["count"].sum() / df_filtered_4["count"].sum()
-)
-df2 = pd.concat([df1, df_percent], axis=1)
-df2 = df2.reset_index()
-df2.columns = ["Organisation Latest DSPT Status", "Count", "Percent of Total"]
-df3 = df2[df2["Organisation Latest DSPT Status"] == "20/21 Standards Met"]
-df4 = df2[df2["Organisation Latest DSPT Status"] == "20/21 Standards Exceeded"]
-df5 = pd.concat([df3, df4])
-df5 = df5.reset_index(drop=True)
-Total_Count = df5["Count"].sum()
-Total_Social_orgs = df_filtered_4[df_filtered_4.columns[0]].count()
-Total_Percent = df5["Percent of Total"].sum()
-Data_f = [
-    [
-        "Standards Met or Exceeded",
-        Total_Count,
-        Total_Social_orgs,
-        Total_Percent,
-        date_string,
-    ]
-]
-df6 = pd.DataFrame(
-    Data_f,
+
+DSPT_ODS_selection =  DSPT_ODS[(DSPT_ODS['Close_Date'].isna()) | (DSPT_ODS['Close_Date'] > close_date)]
+
+DSPT_ODS_selection = DSPT_ODS_selection[
+(DSPT_ODS_selection['Open_Date'] < open_date) & 
+(DSPT_ODS_selection["Name"].str.contains("COMMISSIONING HUB")==False) &
+(DSPT_ODS_selection["Code"].str.contains("RT4|RQF|RYT|0DH|0AD|0AP|0CC|0CG|0CH|0DG")==False)
+].reset_index(drop=True)
+
+df_filtered = DSPT_ODS_selection[
+(DSPT_ODS_selection["Sector"] == "CLINICAL COMMISSIONING GROUP") |
+(DSPT_ODS_selection["Sector"] == "COMMISSIONING SUPPORT UNIT") |
+(DSPT_ODS_selection["Sector"] == "NHS TRUST")
+].reset_index(drop=True)
+
+df_count = df_filtered.groupby("Latest Status").size()
+df_percent = (df_filtered.groupby("Latest Status").size() / len(df_filtered.index))
+df = pd.concat([df_count, df_percent], axis=1).reset_index()
+
+df.columns = ["Organisation Latest DSPT Status", "Count", "Percent of Total"]
+
+df = df[
+(df["Organisation Latest DSPT Status"] == "20/21 Standards Met") |
+(df["Organisation Latest DSPT Status"] == "20/21 Standards Exceeded")
+].reset_index(drop=True)
+
+Total_Count = df["Count"].sum()
+Total_Social_orgs = df_filtered[df_filtered.columns[0]].count()
+Total_Percent = df["Percent of Total"].sum()
+
+Data_f = [[
+"Standards Met or Exceeded",
+Total_Count,
+Total_Social_orgs,
+Total_Percent,
+date_string,
+]]
+
+df_output = pd.DataFrame(Data_f,
     columns=[
         "DSPT status",
         "Number of Trusts, CSUs or CCGs with a standards met or exceeded DSPT status",
@@ -170,11 +143,15 @@ df6 = pd.DataFrame(
         "Date",
     ],
 )
-df6 = df6.round(4)
-df6.index.name = "Unique ID"
+df_output = df_output.round(4)
+df_output.index.name = "Unique ID"
 
-df_processed = df6.copy()
+df_processed = df_output.copy()
 
+
+# COMMAND ----------
+
+df_processed
 
 # COMMAND ----------
 
