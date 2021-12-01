@@ -136,9 +136,9 @@ date_string,
 df_output = pd.DataFrame(Data_f,
     columns=[
         "DSPT status",
-        "Number of Trusts, CSUs or CCGs with a standards met or exceeded DSPT status",
-        "Total number of Trusts, CSUs or CCGs",
-        "Percent of Trusts, CSUs or CCGs with a standards met or exceeded DSPT status",
+        "Number of CSUs and CCGs with a standards met or exceeded DSPT status",
+        "Total number of CSUs and CCGs",
+        "Percent of CSUs and CCGs with a standards met or exceeded DSPT status",
         "Date",
     ],
 )
