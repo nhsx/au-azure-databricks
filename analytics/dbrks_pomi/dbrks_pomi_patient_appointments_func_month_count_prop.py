@@ -66,8 +66,8 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 source_path = config_JSON['pipeline']['project']['source_path']
 source_file = config_JSON['pipeline']['project']['source_file']
 file_system = config_JSON['pipeline']['adl_file_system']
-sink_path = config_JSON['pipeline']['project']['databricks'][8]['sink_path']
-sink_file = config_JSON['pipeline']['project']['databricks'][8]['sink_file']  
+sink_path = config_JSON['pipeline']['project']['databricks'][11]['sink_path']
+sink_file = config_JSON['pipeline']['project']['databricks'][11]['sink_file']  
 
 # COMMAND ----------
 
