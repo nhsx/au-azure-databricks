@@ -8,14 +8,14 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_pomi_patient_record_func_month_count_prop.py
+FILE:           dbrks_pomi_microtest_gp_practice_month_count.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric: No. and % of patients registered for detailed coded record functionality (M0142)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric: No. of Microtest GP Practices (M058B)
 USAGE:
                 ...
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        07 Oct. 2021
+CREATED:        14 Dec 2021
 VERSION:        0.0.1
 """
 
@@ -38,7 +38,6 @@ import json
 
 # 3rd party:
 import pandas as pd
-import numpy as np
 from pathlib import Path
 from azure.storage.filedatalake import DataLakeServiceClient
 
@@ -66,8 +65,8 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 source_path = config_JSON['pipeline']['project']['source_path']
 source_file = config_JSON['pipeline']['project']['source_file']
 file_system = config_JSON['pipeline']['adl_file_system']
-sink_path = config_JSON['pipeline']['project']['databricks'][14]['sink_path']
-sink_file = config_JSON['pipeline']['project']['databricks'][14]['sink_file']  
+sink_path = config_JSON['pipeline']['project']['databricks'][11]['sink_path']
+sink_file = config_JSON['pipeline']['project']['databricks'][11]['sink_file']  
 
 # COMMAND ----------
 
@@ -75,18 +74,25 @@ sink_file = config_JSON['pipeline']['project']['databricks'][14]['sink_file']
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
-df1 = df[['Report_Period_End', 'Practice_Code', 'Field', 'Value']]
-df_num = df1[df1["Field"] == "Pat_DetCodeRec_Enbld"]
-df_num_1 = df_num.rename(columns = {'Value': 'Number of patients registered for detailed coded record functionality'}).drop(columns = ['Field']).reset_index(drop = True)
-df_denom = df1[df1["Field"] == "patient_list_size"]
-df_denom_1 = df_denom.rename(columns = {'Value': 'Number of registered patients'}).drop(columns = ['Field']).reset_index(drop = True)
-df_join = pd.merge(df_num_1, df_denom_1,  how='left', left_on=['Report_Period_End','Practice_Code'], right_on = ['Report_Period_End','Practice_Code'])
-df_join["Percent of patients registered for detailed coded record functionality"] = df_join["Number of patients registered for detailed coded record functionality"]/df_join["Number of registered patients"]
-df_join.rename(columns={"Report_Period_End": "Date", "Practice_Code": "Practice code"}, inplace=True)
-df_join_1 = df_join[~(df_join['Percent of patients registered for detailed coded record functionality'] > 1)].reset_index(drop = True)
-df_join_2 = df_join_1.round(4)
-df_join_2.index.name = "Unique ID"
-df_processed = df_join_2.copy()
+df1 = df.groupby(["Report_Period_End", "Practice_Code", "System_Supplier"]).count().reset_index()
+df2 = df1[["Report_Period_End","Practice_Code", "System_Supplier"]]
+df2['System_Supplier_bool'] = df2['System_Supplier'].str.contains("MICROTEST")
+def microtest_gp_practice(c):
+  if c['System_Supplier_bool'] == True:
+    return 1
+  else:
+    return 0
+df2['MICROTEST GP Practices'] = df2.apply(microtest_gp_practice, axis=1)
+df3 = df2.sort_values("Report_Period_End")
+df4 = df3.reset_index(drop = True)
+df5 = df4.drop(columns={"System_Supplier", 
+                         "System_Supplier_bool"})
+df5.rename(columns={
+    "Report_Period_End": "Date",
+    "Practice_Code": "Practice code"},
+     inplace=True)
+df5.index.name = "Unique ID"
+df_processed = df5.copy()
 
 # COMMAND ----------
 
