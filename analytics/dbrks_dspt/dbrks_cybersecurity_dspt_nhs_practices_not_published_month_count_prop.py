@@ -8,9 +8,9 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_cybersecurity_dspt_nhs_practices_exceed_month_count_prop.py
+FILE:           dbrks_cybersecurity_dspt_nhs_practices_not_published_month_count_prop.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric: M077 (No. and % of GP practices that exceed the 20/21 DSPT standard)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric: M078 (No. and % of GP practices that have not submitted 20/21 DSPT assessment)
 USAGE:
                 ...
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli, Chris Todd
