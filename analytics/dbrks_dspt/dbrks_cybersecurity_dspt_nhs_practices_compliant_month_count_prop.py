@@ -8,14 +8,14 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           cybersecurity_dspt_nhs_trusts_standards_month_count_prop.py
+FILE:           dbrks_cybersecurity_dspt_nhs_practices_compliant_month_count_prop.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric: M020A_M021A  (Number and percent of Trusts registered for DSPT assessment that meet or exceed the DSPT standard)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric: M076  (No. and % of GP practices that are compliant with (meet or exceed) the 20/21 DSPT standard)
 USAGE:
                 ...
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli, Chris Todd
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        1 Dec 2021
+CREATED:        15 Dec 2021
 VERSION:        0.0.1
 """
 
