@@ -130,7 +130,7 @@ Total_Social_orgs = df_filtered[df_filtered.columns[0]].count()
 Total_Percent = df["Percent of Total"].sum()
 
 Data_f = [[
-"Standards Met or Exceeded",
+"Standards Exceeded",
 Total_Count,
 Total_Social_orgs,
 Total_Percent,
