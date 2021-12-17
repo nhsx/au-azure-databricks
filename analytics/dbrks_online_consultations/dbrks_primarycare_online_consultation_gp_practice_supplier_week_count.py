@@ -8,14 +8,14 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_eps_usage_eps_items_month_count.py
+FILE:           dbrks_primarycare_online_consultation_gp_practice_supplier_week_count.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric: Number of items prescribed and dispensed via EPS during the reporting period (M086)
+                Databricks notebook with processing code for the nhsx_dfpc_analytics metric: GP practice OC supplier - i.e. count GP practices against each supplier (M062)
 USAGE:
                 ...
-CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli
+CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli, Everistus Oputa
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        04 October 2021
+CREATED:        14 Dec 2021
 VERSION:        0.0.1
 """
 
@@ -38,6 +38,7 @@ import json
 
 # 3rd party:
 import pandas as pd
+import numpy as np
 from pathlib import Path
 from azure.storage.filedatalake import DataLakeServiceClient
 
@@ -55,34 +56,43 @@ CONNECTION_STRING = dbutils.secrets.get(scope="datalakefs", key="CONNECTION_STRI
 # Load JSON config from Azure datalake
 # -------------------------------------------------------------------------
 file_path_config = "/config/pipelines/nhsx-au-analytics/"
-file_name_config = "config_gp_eps_dbrks.json"
+file_name_config = "config_online_consult_dbrks.json"
 file_system_config = "nhsxdatalakesagen2fsprod"
 config_JSON = datalake_download(CONNECTION_STRING, file_system_config, file_path_config, file_name_config)
 config_JSON = json.loads(io.BytesIO(config_JSON).read())
 
 # COMMAND ----------
 
-#Get parameters from JSON config
-file_system = config_JSON['pipeline']['adl_file_system']
+# Read parameters from JSON config
+# -------------------------------------------------------------------------
 source_path = config_JSON['pipeline']['project']['source_path']
 source_file = config_JSON['pipeline']['project']['source_file']
-sink_path = config_JSON['pipeline']['project']['databricks'][3]['sink_path']
-sink_file = config_JSON['pipeline']['project']['databricks'][3]['sink_file']  
+file_system = config_JSON['pipeline']['adl_file_system']
+sink_path = config_JSON['pipeline']['project']['databricks'][4]['sink_path']
+sink_file = config_JSON['pipeline']['project']['databricks'][4]['sink_file']  
 
 # COMMAND ----------
 
-#Processing
+# Processing
+# -------------------------------------------------------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
-df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
-df1 = df[['ODS Code', 'EPS Items', 'Date']]
-df1.rename(columns = {'ODS Code': 'Practice code', 'EPS Items': 'Number of EPS items'}, inplace=True)
-df1.index.name = "Unique ID"
-df_processed = df1.copy()
+df = pd.read_csv(io.BytesIO(file))
+df1 = df[df['Valid_Practice'] == 1]
+df2 = df1[["Week Commencing", "Practice Code", "oc_supplier_system"]]
+df2['oc_supplier_system'] = df2['oc_supplier_system'].replace(np.nan, 'NONE')
+df2['oc_supplier_system'] = df2['oc_supplier_system'].str.replace('^\d+', 'UNKNOWN')
+df2.rename(columns={"oc_supplier_system": "Online consultation system supplier", "Practice Code": "Practice code"},inplace=True)
+df2['Count'] = 1
+df2['Week Commencing'] = pd.to_datetime(df2['Week Commencing'], format='%Y-%m-%d')
+df3 = df2.sort_values(by='Week Commencing').reset_index(drop = True)
+df3.index.name = "Unique ID"
+df_processed = df3.copy()
 
 # COMMAND ----------
 
-#Upload processed data to datalake
+# Upload processed data to datalake
+# -------------------------------------------------------------------------
 file_contents = io.StringIO()
 df_processed.to_csv(file_contents)
 datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+latestFolder, sink_file)
