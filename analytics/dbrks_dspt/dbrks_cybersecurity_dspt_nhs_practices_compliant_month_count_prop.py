@@ -75,6 +75,8 @@ sink_file = config_JSON['pipeline']['project']['databricks'][0]['sink_file']
 
 # Processing
 # -------------------------------------------------------------------------
+#unique id/ date /practice code / standard met or exceeded (1/0) / 
+#upon ingestion add date column to raw file, append new cut. 
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 reference_latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, reference_path)
 
@@ -157,7 +159,7 @@ df_processed = df_output.copy()
 
 # COMMAND ----------
 
-df_processed
+DSPT_df["Latest Status"].unique()
 
 # COMMAND ----------
 
