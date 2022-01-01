@@ -24,7 +24,7 @@ VERSION:        0.0.1
 
 # Install libs
 # -------------------------------------------------------------------------
-%pip install geojson==2.5.* tabulate requests pandas pathlib azure-storage-file-datalake beautifulsoup4 numpy urllib3 lxml regex pyarrow==5.0.* xlrd openpyxl
+%pip install geojson==2.5.* tabulate requests pandas pathlib azure-storage-file-datalake beautifulsoup4 numpy urllib3 lxml regex pyarrow==5.0.* xlrd openpyxl python-dateutil
 
 # COMMAND ----------
 
@@ -45,6 +45,7 @@ from pathlib import Path
 from urllib import request as urlreq
 from bs4 import BeautifulSoup
 from azure.storage.filedatalake import DataLakeServiceClient
+from dateutil.relativedelta import relativedelta
 
 # Connect to Azure datalake
 # -------------------------------------------------------------------------
@@ -82,12 +83,19 @@ sink_file = config_JSON['pipeline']['raw']['appended_file']
 # Pull new snapshot dataset
 # -------------------------
 current_month = datetime.now().strftime('%B') + '/'
-new_source_path_date = new_source_path + current_month
-latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, new_source_path_date)
-toc_messages_file_name_list = datalake_listContents(CONNECTION_STRING, file_system, new_source_path_date+latestFolder)
-toc_messages_file_name_list = [file for file in toc_messages_file_name_list if '.xlsx' in file]
-
-for new_source_file in toc_messages_file_name_list:
+last_month = (datetime.now() - relativedelta(months=1)).strftime('%B') + '/'
+try:
+  new_source_path_date = new_source_path + current_month
+  latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, new_source_path_date)
+  file_name_list = datalake_listContents(CONNECTION_STRING, file_system, new_source_path_date+latestFolder)
+  file_name_list = [file for file in file_name_list if '.xlsx' in file]
+except:
+  new_source_path_date = new_source_path + last_month
+  latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, new_source_path_date)
+  file_name_list = datalake_listContents(CONNECTION_STRING, file_system, new_source_path_date+latestFolder)
+  file_name_list = [file for file in file_name_list if '.xlsx' in file]
+  
+for new_source_file in file_name_list:
   new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path_date+latestFolder, new_source_file)
   new_dataframe = pd.read_excel(io.BytesIO(new_dataset), sheet_name = 'Line By Line', header = 4, engine='openpyxl')
   new_dataframe_1 = new_dataframe.loc[:, ~new_dataframe.columns.str.contains('^Unnamed')]
