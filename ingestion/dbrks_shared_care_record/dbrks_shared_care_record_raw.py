@@ -69,165 +69,105 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 
 # Read parameters from JSON config
 # -------------------------------------------------------------------------
-# file_system = config_JSON['pipeline']['adl_file_system']
-# new_source_path = config_JSON['pipeline']['raw']['sink_path']
-# new_source_file = config_JSON['pipeline']['raw']['sink_file']
-# historical_source_path = config_JSON['pipeline']['raw']['appended_path']
-# historical_source_file = config_JSON['pipeline']['raw']['appended_file']
-# sink_path = config_JSON['pipeline']['raw']['appended_path']
-# sink_file = config_JSON['pipeline']['raw']['appended_file']
+file_system = config_JSON['pipeline']['adl_file_system']
+source_path = config_JSON['pipeline']['raw']['source_path']
+sink_path = config_JSON['pipeline']['raw']['sink_path']
 
 # COMMAND ----------
 
-file_system = "nhsxdatalakesagen2fsprod"
-ods_table_path = "proc/projects/reference_tables/ods_codes/gp_mapping/"
-ods_table_file = "table_odscodes_gp_mapping.parquet"
+latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, file_path)
+latestFolder
 
 # COMMAND ----------
 
-# Ingest ODS Code table 
-# -------------------------------------------------------------------------
-latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, ods_table_path)
-file = datalake_download(CONNECTION_STRING, file_system, ods_table_path+latestFolder, ods_table_file)
-df_ods = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
+# Get list of all files in latest folder
+def datalake_listDirectory(CONNECTION_STRING, file_system, source_path):
+    try:
+        service_client = DataLakeServiceClient.from_connection_string(CONNECTION_STRING)
+        file_system_client = service_client.get_file_system_client(file_system=file_system)
+        paths = file_system_client.get_paths(path=source_path)
+        directory = []
+        for path in paths:
+            path.name = path.name.replace(source_path, '')
+            directory.append(path.name)
+    except Exception as e:
+        print(e)
+    return directory, paths
+  
+directory, paths = datalake_listDirectory(CONNECTION_STRING, file_system, file_path+latestFolder)
+directory
 
 # COMMAND ----------
 
-df_ods
+from openpyxl import load_workbook
+
+def get_sheetnames_xlsx(filepath):
+    wb = load_workbook(filepath, read_only=True, keep_links=False)
+    return wb.sheetnames
+  
+stp_df = pd.DataFrame()
+trust_df = pd.DataFrame()
+pcn_df = pd.DataFrame()
+other_df = pd.DataFrame()
+
+for filename in directory:
+    file = datalake_download(CONNECTION_STRING, file_system, file_path+latestFolder, filename)
+    sheets = get_sheetnames_xlsx(io.BytesIO(file))
+    
+    # STP calculations
+    sheet_name = [sheet for sheet in sheets if sheet.startswith('STP')]
+    xls_file = pd.read_excel(io.BytesIO(file), sheet_name=sheet_name, engine='openpyxl')
+    for key in xls_file:
+        xls_file[key].drop(list(xls_file[key].filter(regex = 'Unnamed:')), axis = 1, inplace = True)
+        xls_file[key] = xls_file[key].loc[~xls_file[key]["For Month"].isnull()]
+        # get excel file metadata
+        STP_code = xls_file[key]["ODS STP Code"].unique()[0]              # get stp code for all sheets
+        STP_name = xls_file[key]["STP Name"].unique()[0]                  # get stp name for all sheets
+        ICS_name = xls_file[key]["ICS Name (if applicable)"].unique()[0]  # get ics name for all sheets
+        # append to dataframe
+        stp_df = stp_df.append(xls_file[key], ignore_index=True)
+        
+    # Trust calculations
+    sheet_name = [sheet for sheet in sheets if sheet.startswith('Trust')]
+    xls_file = pd.read_excel(io.BytesIO(file), sheet_name=sheet_name, engine='openpyxl')
+    for key in xls_file:
+        xls_file[key].drop(list(xls_file[key].filter(regex = 'Unnamed:')), axis = 1, inplace = True)
+        xls_file[key] = xls_file[key].loc[~xls_file[key]["For Month"].isnull()]
+        xls_file[key].insert(1, "ODS STP Code", STP_code, False)
+        xls_file[key].insert(2, "STP Name", STP_name, False)
+        xls_file[key].insert(3, "ICS Name (if applicable)", ICS_name, False)
+        trust_df = trust_df.append(xls_file[key], ignore_index=True)
+        
+    # PCN calculations
+    sheet_name = [sheet for sheet in sheets if sheet.startswith('PCN')]
+    xls_file = pd.read_excel(io.BytesIO(file), sheet_name=sheet_name, engine='openpyxl')
+    for key in xls_file:
+        xls_file[key].drop(list(xls_file[key].filter(regex = 'Unnamed:')), axis = 1, inplace = True)
+        xls_file[key] = xls_file[key].loc[~xls_file[key]["For Month"].isnull()]
+        xls_file[key].insert(1, "ODS STP Code", STP_code, False)
+        xls_file[key].insert(2, "STP Name", STP_name, False)
+        xls_file[key].insert(3, "ICS Name (if applicable)", ICS_name, False)
+        pcn_df = pcn_df.append(xls_file[key], ignore_index=True)
+        
+    # Other calculations
+    sheet_name = [sheet for sheet in sheets if sheet.startswith('Other')]
+    xls_file = pd.read_excel(io.BytesIO(file), sheet_name=sheet_name, engine='openpyxl')
+    for key in xls_file:
+        xls_file[key].drop(list(xls_file[key].filter(regex = 'Unnamed:')), axis = 1, inplace = True)
+        xls_file[key] = xls_file[key].loc[~xls_file[key]["For Month"].isnull()]
+        #xls_file[key].insert(1, "ODS STP Code", STP_code, False)
+        #xls_file[key].insert(2, "STP Name", STP_name, False)
+        #xls_file[key].insert(3, "ICS Name (if applicable)", ICS_name, False)
+        other_df = other_df.append(xls_file[key], ignore_index=True)
 
 # COMMAND ----------
 
-
-
-# ODS Code STP table 
-# -------------------------------------------------------------------------
-df_STP = df[["PCN_STP_Code", "PCN_STP_Name"]].drop_duplicates().reset_index(drop = True)
-df_STP_1 = df_STP.rename(columns = {'PCN_STP_Code': 'ODS STP code', 'PCN_STP_Name' : 'STP name'})
-df_STP_1
+trust_df.head()
 
 # COMMAND ----------
 
-source_path = 'land/sharepoint/Shared Documents/nhsx_au_ingestion/shcr/timestamp/xlsx/all_tables/2021-06-01/'
-STP_file_name_list = datalake_listContents(CONNECTION_STRING, file_system, source_path)
-file_types = ['.xlsx', '.XLSX']
-STP_file_name_list_1 = [x for x in STP_file_name_list if any(c in x for c in file_types)]
-
-# COMMAND ----------
-
-STP_file_name_list_1
-
-# COMMAND ----------
-
-df = pd.DataFrame()
-for filename in STP_file_name_list_1:
-  file = datalake_download(CONNECTION_STRING, file_system, source_path, filename)
-  new_df = pd.read_excel(file, sheet_name='STP', engine='openpyxl', index_col=None, header=None, skiprows=1)
-  df = df.append(new_df)
-df_1 = df.rename(columns = {0: "For Month",
-                           1: "ODS STP Code",
-                           2: "STP Name",
-                           3: "ICS Name (if applicable)",
-                           4: "ShCR Programme Name",
-                           5: "Name of ShCR System",
-                           6: "Number of users with access to the ShCR",
-                           7: "Number of citizen records available to users via the ShCR",
-                           8: "Number of ShCR views in the past month",
-                           9: "Number of unique user ShCR views in the past month",
-                           10: "Completed by (email)",
-                           11: "Date completed:"})
-df_2 = df_1.iloc[:, :12]
-df_3 = df_2.dropna(how = 'all').reset_index(drop = True)
-
-# COMMAND ----------
-
-df_3
-
-# COMMAND ----------
-
-
-df_2
-
-# COMMAND ----------
-
-
-
-# my_filenames = [
-#     os.path.join(root, name)
-#     for root, dirs, files in os.walk(path)
-#     for name in files
-#     if name.endswith((".xlsx" or ".XLSX"))
-# ]
-
-# df = pd.DataFrame()
-# for filename in my_filenames:
-#     #print(filename)
-#     new_df = pd.read_excel(filename, sheet_name='STP', engine='openpyxl', index_col=None, header=0)
-#     df = df.append(new_df)
-# df = df[df.columns.drop(list(df.filter(regex='Unnamed')))]
-# df.to_csv('data/ShCR_STP_snapshot.csv', index=False)
-
-# df = pd.DataFrame()
-# for filename in my_filenames:
-#     #print(filename)
-#     new_df = pd.read_excel(filename, sheet_name='PCN', engine='openpyxl', index_col=None, header=0)
-#     df = df.append(new_df)
-# df = df[df.columns.drop(list(df.filter(regex='Unnamed')))]
-# df.to_csv('data/ShCR_PCN_snapshot.csv', index=False)
-
-# df = pd.DataFrame()
-# for filename in my_filenames:
-#     #print(filename)
-#     new_df = pd.read_excel(filename, sheet_name='Trust', engine='openpyxl', index_col=None, header=0)
-#     df = df.append(new_df)
-# df = df[df.columns.drop(list(df.filter(regex='Unnamed')))]
-# df.to_csv('data/ShCR_Trust_snapshot.csv', index=False)
-
-
-# COMMAND ----------
-
-# # Processing
-# # -------------------------------------------------------------------------
-# # Pull latest raw dataset
-# latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, new_source_path)
-# new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path+latestFolder, new_source_file)
-# fields = ['Practice_Code', 'Q114base', 'Q114_5', 'Q101base', 'Q101_4', 'q73base', 'Q73_1234base', 'q73_12' ]
-# new_dataframe = pd.read_csv(io.BytesIO(new_dataset), usecols=fields)
-# new_dataframe.rename(columns = {'Practice_Code': 'Practice code', 
-#                            'Q114base': 'M090_denominator', 
-#                            'Q114_5': 'M090_numerator',
-#                            'Q101base': 'M091_denominator',
-#                            'Q101_4': 'M091_numerator',
-#                            'q73base': 'M092_denominator', 
-#                            'Q73_1234base': 'M092_numerator_M093_denominator', 
-#                            'q73_12': 'M093_numerator'},
-#                            inplace=True)
-# new_dataframe.insert(0,'Date','')
-# new_dataframe.insert(0,'Collection end date','')
-# new_dataframe.insert(0,'Collection start date','')
-# date = '2021-01-01'
-# new_dataframe["Date"] = date
-# new_dataframe["Collection start date"] = "2021-01-01"
-# new_dataframe["Collection end date"] = "2021-03-01"
-
-# # pull historical dataset
-# latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, historical_source_path)
-# historical_dataset = datalake_download(CONNECTION_STRING, file_system, historical_source_path+latestFolder, historical_source_file)
-# historical_dataframe = pd.read_parquet(io.BytesIO(historical_dataset), engine="pyarrow")
-
-# COMMAND ----------
-
-# # Append new data to historical data
-# # -------------------------------------------------------------------------
-# if date not in historical_dataframe["Date"].values:
-#   historical_dataframe = historical_dataframe.append(new_dataframe)
-#   historical_dataframe = historical_dataframe.reset_index(drop=True)
-#   historical_dataframe.index.name = "Unique ID"
-# else:
-#   print("data already exists")
-
-# COMMAND ----------
-
-# # Upload processed data to datalake
-# file_contents = io.BytesIO()
-# historical_dataframe.to_parquet(file_contents, engine="pyarrow")
-# datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+latestFolder, sink_file)
+# Upload appended data to datalake
+current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
+file_contents = io.BytesIO()
+STP_df.to_parquet(file_contents, engine="pyarrow")
+datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, sink_file)
