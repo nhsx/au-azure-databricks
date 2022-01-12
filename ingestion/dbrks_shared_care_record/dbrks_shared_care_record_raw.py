@@ -144,13 +144,13 @@ for filename in directory:
             inplace=True,
         )
         # get excel file metadata
-        STP_code = xls_file[key]["ODS STP Code"].unique()[
-            0
-        ]  # get stp code for all sheets
+        STP_code = xls_file[key]["ODS STP Code"].unique()[0]  # get stp code for all sheets
         STP_name = xls_file[key]["STP Name"].unique()[0]  # get stp name for all sheets
-        ICS_name = xls_file[key]["ICS Name (if applicable)"].unique()[
-            0
-        ]  # get ics name for all sheets
+        ICS_name = xls_file[key]["ICS Name (if applicable)"].unique()[0]  # get ics name for all sheets
+        xls_file[key]["Number of users with access to the ShCR"] = xls_file[key]["Number of users with access to the ShCR"].fillna(0).astype(int)
+        xls_file[key]["Number of citizen records available to users via the ShCR"] = xls_file[key]["Number of citizen records available to users via the ShCR"].fillna(0).astype(int)
+        xls_file[key]["Number of ShCR views in the past month"] = xls_file[key]["Number of ShCR views in the past month"].fillna(0).astype(int)
+        xls_file[key]["Number of unique user ShCR views in the past month"] = xls_file[key]["Number of unique user ShCR views in the past month"].fillna(0).astype(int)
         # append to dataframe
         stp_df = stp_df.append(xls_file[key], ignore_index=True)
 
@@ -181,7 +181,7 @@ for filename in directory:
         ].map({"yes": 1, "no": 0, "Yes": 1, "No": 0})
         xls_file[key][
             "Partner Organisation primary clinical system connect directly to the ShCR?"
-        ] = xls_file[key]["Partner Organisation connected to ShCR?"].map(
+        ] = xls_file[key]["Partner Organisation primary clinical system connect directly to the ShCR?"].map(
             {"yes": 1, "no": 0, "Yes": 1, "No": 0}
         )
         trust_df = trust_df.append(xls_file[key].iloc[:, 0:9], ignore_index=True)
@@ -208,6 +208,8 @@ for filename in directory:
         xls_file[key].insert(1, "ODS STP Code", STP_code, False)
         xls_file[key].insert(2, "STP Name", STP_name, False)
         xls_file[key].insert(3, "ICS Name (if applicable)", ICS_name, False)
+        xls_file[key]["Partner Organisation connected to ShCR?"] = xls_file[key]["Partner Organisation connected to ShCR?"].map({"yes": 1, "no": 0, "Yes": 1, "No": 0})
+        xls_file[key]["Partner Organisation primary clinical system connect directly to the ShCR?"] = xls_file[key]["Partner Organisation primary clinical system connect directly to the ShCR?"].map({"yes": 1, "no": 0, "Yes": 1, "No": 0})
         pcn_df = pcn_df.append(xls_file[key], ignore_index=True)
 
     # Other calculations
@@ -237,13 +239,13 @@ current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
 
 # STP
 file_contents = io.StringIO()
-stp_df.to_csv(file_contents)
+stp_df.to_csv(file_contents, index=False)
 datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_stp_data_month_count.csv")
 # Trust
 file_contents = io.StringIO()
-trust_df.to_csv(file_contents)
+trust_df.to_csv(file_contents, index=False)
 datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_trust_data_month_count.csv")
 # PCN
 file_contents = io.StringIO()
-pcn_df.to_csv(file_contents)
+pcn_df.to_csv(file_contents, index=False)
 datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_pcn_data_month_count.csv")
