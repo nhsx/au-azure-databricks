@@ -73,6 +73,9 @@ sink_file = config_JSON['pipeline']['project']['databricks'][1]['sink_file']
 
 # COMMAND ----------
 
+#Processing
+#------------------------------------------
+
 #Denominator data ingestion and processing
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, denominator_source_path)
 file = datalake_download(CONNECTION_STRING, file_system, denominator_source_path+latestFolder, denominator_source_file)
@@ -86,24 +89,23 @@ df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 df1 = df[['_time', 'workflow', 'senderOdsCode', 'recipientOdsCode']]
 df1 = df1[df1['workflow'].str.contains('ACK')].reset_index(drop = True)
 df1['Count'] = 1
-df1['_time'] = pd.to_datetime(df1['_time']).dt.strftime('%Y-%m')
+df1['_time'] = pd.to_datetime(df1['_time']).dt.strftime("%Y-%m")
 df2 = df1.groupby(['_time', 'workflow', 'senderOdsCode', 'recipientOdsCode']).sum().reset_index()
 df2['Count'] = df2['Count'].div(2).apply(np.floor)
 df2 = df2.drop(columns = ["senderOdsCode", "recipientOdsCode"]).groupby(["workflow", "_time"]).sum().reset_index()
 df3 = df2.set_index(['_time','workflow']).unstack()['Count'].reset_index().fillna(0)
-df3.columns.name = None
-df3["Number of successful FHIR ToC mental health and inpatient discharge messages"] = df3["TOC_FHIR_IP_DISCH_ACK"] + df3["TOC_FHIR_MH_DISCH_ACK"]
-df4 = df3.drop(columns=['TOC_FHIR_IP_DISCH_ACK', 'TOC_FHIR_OP_ATTEN_ACK', 'TOC_FHIR_EC_DISCH_ACK', 'TOC_FHIR_MH_DISCH_ACK'])
-
-# COMMAND ----------
+df5 = df3.copy()
+df5["Number of successful FHIR ToC acute admitted patient care discharge messages"] = df5["TOC_FHIR_IP_DISCH_ACK"] 
+df6 = df5.drop(columns=['TOC_FHIR_IP_DISCH_ACK', 'TOC_FHIR_OP_ATTEN_ACK', 'TOC_FHIR_EC_DISCH_ACK', 'TOC_FHIR_MH_DISCH_ACK'])
 
 #Joined data processing
-df_join = df_denom_1.join(df4, how='left', lsuffix='Discharge_Date', rsuffix='_time')
-df_join_1 = df_join.drop(columns = ['_time']).rename(columns = {'Discharge_Date': 'Date', 'APC_Distcharges': 'Number of admitted patient care discharges'})
-df_join_1['Inpatient and day case FHIR ToC utilisation (per 1,000 discharges)'] = df_join_1['Number of successful FHIR ToC mental health and inpatient discharge messages']/ (df_join_1['Number of admitted patient care discharges']/1000)
+df_join = df_denom_1.join(df6, how='left', lsuffix='Discharge_Date', rsuffix='_time')
+df_join_1 = df_join.drop(columns = ['_time']).rename(columns = {'Discharge_Date': 'Date', 'APC_Distcharges': 'Number of admitted patient care discharges (excluding mental health and maternity related discharges)'})
+df_join_1['Acute admitted patient care FHIR ToC utilisation (per 1,000 discharges)'] = df_join_1["Number of successful FHIR ToC acute admitted patient care discharge messages"]/ (df_join_1['Number of admitted patient care discharges (excluding mental health and maternity related discharges)']/1000)
 df_join_2 = df_join_1.round(2)
 df_join_2.index.name = "Unique ID"
 df_processed = df_join_2.copy()
+df_processed
 
 # COMMAND ----------
 

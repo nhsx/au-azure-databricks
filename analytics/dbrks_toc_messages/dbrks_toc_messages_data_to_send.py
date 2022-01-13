@@ -97,7 +97,7 @@ df4.columns.name = None
 df4.index.name = "Unique ID"
 if df4['Date'].iloc[-1] == datetime.now().strftime("%Y-%m"):
   df4.drop(df4.tail(1).index,inplace=True)
-df_M030A = df4.copy() 
+df_M030A = df4.copy()
 
 # COMMAND ----------
 

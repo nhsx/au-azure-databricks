@@ -73,26 +73,27 @@ sink_file = config_JSON['pipeline']['project']['databricks'][0]['sink_file']
 # COMMAND ----------
 
 #Processing
+#------------------------------------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 df1 = df[['_time', 'workflow', 'senderOdsCode', 'recipientOdsCode']]
 df1 = df1[df1['workflow'].str.contains('ACK')].reset_index(drop = True)
 df1['Count'] = 1
-df1['_time'] = pd.to_datetime(df1['_time']).dt.strftime("%Y-W%W")
+df1['_time'] = pd.to_datetime(df1['_time']).dt.strftime("%Y-%m")
 df2 = df1.groupby(['_time', 'workflow', 'senderOdsCode', 'recipientOdsCode']).sum().reset_index()
 df2['Count'] = df2['Count'].div(2).apply(np.floor)
 df2 = df2.drop(columns = ["senderOdsCode", "recipientOdsCode"]).groupby(["workflow", "_time"]).sum().reset_index()
 df3 = df2.set_index(['_time','workflow']).unstack()['Count'].reset_index().fillna(0)
-df4 = df3.rename(columns = {'_time': 'Date (week commencing)', 
+df4 = df3.rename(columns = {'_time': 'Date', 
                             'TOC_FHIR_EC_DISCH_ACK': 'Number of successful FHIR ToC emergency care discharge messages',
-                            'TOC_FHIR_IP_DISCH_ACK': 'Number of successful FHIR ToC inpatient discharge messages',
+                            'TOC_FHIR_IP_DISCH_ACK': 'Number of successful FHIR ToC acute admitted patient care discharge messages',
                             'TOC_FHIR_MH_DISCH_ACK': 'Number of successful FHIR ToC mental health discharge messages',
                             'TOC_FHIR_OP_ATTEN_ACK': 'Number of successful FHIR ToC outpatient clinic attendance messages'})
 df4.columns.name = None
 df4.index.name = "Unique ID"
-df4['Date (week commencing)'] = df4['Date (week commencing)'].astype(str) + '-1'
-df4['Date (week commencing)'] = pd.to_datetime(df4['Date (week commencing)'],format= '%G-W%V-%u')
+if df4['Date'].iloc[-1] == datetime.now().strftime("%Y-%m"):
+  df4.drop(df4.tail(1).index,inplace=True)
 df_processed = df4.copy()
 
 # COMMAND ----------
