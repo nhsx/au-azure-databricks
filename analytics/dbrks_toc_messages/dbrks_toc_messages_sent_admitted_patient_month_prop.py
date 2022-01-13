@@ -10,8 +10,7 @@
 """
 FILE:           dbrks_toc_messages_sent_month_prop.py
 DESCRIPTION:    Databricks notebook with processing code for the NHSX Analytics
-                unit metric: No. transfer of care digital messages sent to GPs
-                per 1,000 discharges (inpatient and mental health) (M030B)
+                unit metric: Inpatient and day case ToC digital message utilisation (per 1,000 discharges) (M030B)
 
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
