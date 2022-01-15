@@ -8,14 +8,14 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_primarycare_gp_it_standards_month_prop.py
+FILE:           dbrks_primarycare_gp_it_standards_year_count_prop.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric: Proportion of GP practices compliant with IT standards (*Cyber Security) (M015)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric: No. and % of GP practices compliant with IT standards (GPITOM) (M074)
 USAGE:
                 ...
-CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli ,Everistus Oputa
+CONTRIBUTORS:   Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        23 Nov 2021
+CREATED:        15 Jan 2021
 VERSION:        0.0.1
 """
 
@@ -68,8 +68,8 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 source_path = config_JSON['pipeline']['project']['source_path']
 source_file = config_JSON['pipeline']['project']['source_file']
 file_system = config_JSON['pipeline']['adl_file_system']
-sink_path = config_JSON['pipeline']['project']['sink_path']
-sink_file = config_JSON['pipeline']['project']['sink_file']  
+sink_path = config_JSON['pipeline']['project']["databricks"][1]['sink_path']
+sink_file = config_JSON['pipeline']['project']["databricks"][1]['sink_file']
 
 # COMMAND ----------
 
@@ -78,24 +78,11 @@ sink_file = config_JSON['pipeline']['project']['sink_file']
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_csv(io.BytesIO(file))
-date = datetime.now().strftime("%Y-%m-%d")
-date_string = str(date)
-df["count"] = 1
-df1 = df.groupby("FULLY COMPLIANT")["count"].sum()
-df_percent = df.groupby("FULLY COMPLIANT")["count"].sum() / df["count"].sum()
-df2 = pd.concat([df1, df_percent], axis=1)
-df2 = df2.reset_index()
-df2.columns = [
-        "GP compliance to IT standards",
-        "Number of GP practices",
-        "Percent of total number of GP practices",
-]
-df2["GP compliance to IT standards"].replace("NO",'Not fully compliant', inplace=True)
-df2["GP compliance to IT standards"].replace("YES",'Fully compliant', inplace=True)
-df2["Date"] = date_string
-df2 = df2.round(4)
-df2.index.name = "Unique ID"
-df_processed = df2.copy()
+df["Date"] = pd.to_datetime(df["Date"]) # ---- remove once data ingestion fixed
+df1 = df.rename(columns = {"Practice ODS Code": "Practice code", "FULLY COMPLIANT": "GP practices compliance with IT standards"})
+df1["GP practices compliance with IT standards"] = df1["GP practices compliance with IT standards"].replace("YES", 1).replace("NO", 0)
+df1.index.name = "Unique ID"
+df_processed = df1.copy()
 
 # COMMAND ----------
 
