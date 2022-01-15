@@ -79,8 +79,8 @@ latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_csv(io.BytesIO(file))
 df["Date"] = pd.to_datetime(df["Date"]) # ---- remove once data ingestion fixed
-df1 = df.rename(columns = {"Practice ODS Code": "Practice code", "FULLY COMPLIANT": "GP practices compliance with IT standards"})
-df1["GP practices compliance with IT standards"] = df1["GP practices compliance with IT standards"].replace("YES", 1).replace("NO", 0)
+df1 = df.rename(columns = {"Practice ODS Code": "Practice code", "FULLY COMPLIANT": "GP practice compliance with IT standards"})
+df1["GP practice compliance with IT standards"] = df1["GP practice compliance with IT standards"].replace("YES", 1).replace("NO", 0)
 df1.index.name = "Unique ID"
 df_processed = df1.copy()
 

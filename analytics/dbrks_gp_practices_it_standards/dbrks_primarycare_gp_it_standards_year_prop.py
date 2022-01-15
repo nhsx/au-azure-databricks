@@ -69,7 +69,7 @@ source_path = config_JSON['pipeline']['project']['source_path']
 source_file = config_JSON['pipeline']['project']['source_file']
 file_system = config_JSON['pipeline']['adl_file_system']
 sink_path = config_JSON['pipeline']['project']['databricks'][0]['sink_path']
-sink_file = config_JSON['pipeline']['project']['databricks'][1]['sink_file']  
+sink_file = config_JSON['pipeline']['project']['databricks'][0]['sink_file']  
 
 # COMMAND ----------
 
