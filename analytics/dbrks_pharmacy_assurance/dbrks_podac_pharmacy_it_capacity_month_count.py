@@ -8,7 +8,7 @@
 """
 FILE:          dbrks_podac_pharmacy_it_capacity_month_count.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric: ncrease in capacity of Pharmacy IT systems to enable pharmacists to provide consultation services to patients (no.) (PODAC) (M019)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric: ncrease in capacity of Pharmacy IT systems to enable pharmacists to provide consultation services to patients                     (no.) (PODAC) (M019)
 USAGE:
                 ...
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli ,Everistus Oputa
@@ -76,23 +76,10 @@ sink_file = config_JSON['pipeline']['project']['sink_file']
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_csv(io.BytesIO(file))
-df.insert(loc=4, column="Count", value=1)
 df1 = df[~df["CPCS type"].isin(["Minor Illness Referral Consultation"])]
-df1 = df1.reset_index(drop=True)
-Total_Count = df1["Count"].sum()
-df2 = df1.groupby(["System Assured"])[["Count"]].count()
-df2 = df2.reset_index()
-df2.rename(
-columns={
-            "System Assured": "Pharmacy IT system assurance status",
-            "Count": "Number of pharmacies",
-},
-inplace=True,)
-df2["Pharmacy IT system assurance status"].replace(False,'Not assured', inplace=True)
-df2["Pharmacy IT system assurance status"].replace(True,'Assured', inplace=True)
-df2.loc[-1] = ["Total", Total_Count]
-df3 = df2.reset_index(drop=True)
-df3["Date"] = df["Date"].max()
+df1["System Assured"] = df1["System Assured"].replace("True", 1).replace("False", 0)
+df2 = df1.groupby("Date").agg({"System Assured": "sum", "CPCS type":"count"}).reset_index()
+df3 = df2.rename(columns  = {"System Assured": "Number of pharmacies with a assured IT system status", "CPCS type": "Number of pharmacies"})
 df3.index.name = "Unique ID"
 df_processed = df3.copy()
 
