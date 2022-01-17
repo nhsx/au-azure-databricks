@@ -78,22 +78,14 @@ sink_file = config_JSON['pipeline']['project']['databricks'][0]['sink_file']
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_csv(io.BytesIO(file))
-df["count"] = 1
-df1 = df.groupby("FULLY COMPLIANT")["count"].sum()
-df_percent = df.groupby("FULLY COMPLIANT")["count"].sum() / df["count"].sum()
-df2 = pd.concat([df1, df_percent], axis=1)
-df2 = df2.reset_index()
-df2.columns = [
-        "GP compliance to IT standards",
-        "Number of GP practices",
-        "Percent of total number of GP practices",
-]
-df2["GP compliance to IT standards"].replace("NO",'Not fully compliant', inplace=True)
-df2["GP compliance to IT standards"].replace("YES",'Fully compliant', inplace=True)
-df2["Date"] = df["Date"]
-df2 = df2.round(4)
-df2.index.name = "Unique ID"
-df_processed = df2.copy()
+df["Date"] = pd.to_datetime(df["Date"]) # ---- remove once data ingestion fixed
+df1 = df.rename(columns = {"Practice ODS Code": "Practice code", "FULLY COMPLIANT": "GP practice compliance with IT standards"})
+df1["GP practice compliance with IT standards"] = df1["GP practice compliance with IT standards"].replace("YES", 1).replace("NO", 0)
+df2 = df1.groupby("Date").agg({"GP practice compliance with IT standards": "sum", "Practice code":"count"}).reset_index()
+df3 = df2.rename(columns  = {"GP practice compliance with IT standards": "Number of GP practices compliant with IT standards", "Practice code": "Number of GP practices"})
+df3['Percentage of GP practices compliant with IT standards'] = (df3["Number of GP practices compliant with IT standards"]/df3["Number of GP practices"]).round(4)
+df3.index.name = "Unique ID"
+df_processed = df3.copy()
 
 # COMMAND ----------
 
