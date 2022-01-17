@@ -97,7 +97,8 @@ except:
   
 for new_source_file in file_name_list:
   new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path_date+latestFolder, new_source_file)
-  new_dataframe = pd.read_excel(io.BytesIO(new_dataset), sheet_name = 'Line By Line', header = 4, engine='openpyxl')
+  header_list = ["Unnamed","CQC registered location - latest DSPT status", "Date of location publication", "Location CQC ID ", "Location start date", "Care home?", "Location name", "Location ODS code", "Location telephone number", "CQC registered manager","Location region","Region","Location local authority","Location ONSPD CCG","Location street address","Location address line 2", "Location city", "Location county", "Location postal code", "Brand ID", "Brand name", "Name of parent organisation", "CQC ID of parent organisation", "Larger organisation?", "Single Location", "Parent ODS code", "Latest DSPT status of parent", "Dormant (Y/N)"]
+  new_dataframe = pd.read_excel(io.BytesIO(new_dataset), sheet_name = 'Line By Line', header = 4, engine='openpyxl', names = header_list)
   new_dataframe_1 = new_dataframe.loc[:, ~new_dataframe.columns.str.contains('^Unnamed')]
   new_dataframe_1['Date'] = latestFolder.replace('/','')
   new_dataframe_1['Date'] = pd.to_datetime(new_dataframe_1['Date']).dt.strftime('%Y-%m')
