@@ -109,25 +109,6 @@ df_processed = df_11.copy()
 
 # COMMAND ----------
 
-# Processing
-# -------------------------------------------------------------------------
-
-latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
-file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
-df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
-df["Count"] = 1
-df_1 = df.groupby(['Date',"CQC registered location - latest DSPT status"]).sum().reset_index()
-df_2 = df_1[
-(df_1["CQC registered location - latest DSPT status"] == "19/20 Standards Met.") |
-(df_1["CQC registered location - latest DSPT status"] == "19/20 Standards Exceeded.") |
-(df_1["CQC registered location - latest DSPT status"] == "20/21 Standards Met.") |
-(df_1["CQC registered location - latest DSPT status"] == "20/21 Standards Exceeded.")
-].reset_index(drop=True)
-df_3 = df_2.groupby("Date").sum().reset_index()
-
-
-# COMMAND ----------
-
 # Upload processed data to datalake
 # -------------------------------------------------------------------------
 file_contents = io.StringIO()
