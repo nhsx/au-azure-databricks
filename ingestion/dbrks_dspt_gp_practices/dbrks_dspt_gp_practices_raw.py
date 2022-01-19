@@ -60,22 +60,22 @@ CONNECTION_STRING = dbutils.secrets.get(scope="datalakefs", key="CONNECTION_STRI
 
 # Load JSON config from Azure datalake
 # -------------------------------------------------------------------------
-#file_path_config = "/config/pipelines/nhsx-au-analytics/"
-#file_name_config = "config_dspt_socialcare_dbrks.json"
-#file_system_config = "nhsxdatalakesagen2fsprod"
-#config_JSON = datalake_download(CONNECTION_STRING, file_system_config, file_path_config, file_name_config)
-#config_JSON = json.loads(io.BytesIO(config_JSON).read())
+file_path_config = "/config/pipelines/nhsx-au-analytics/"
+file_name_config = "config_dspt_gp_practices_dbrks.json"
+file_system_config = "nhsxdatalakesagen2fsprod"
+config_JSON = datalake_download(CONNECTION_STRING, file_system_config, file_path_config, file_name_config)
+config_JSON = json.loads(io.BytesIO(config_JSON).read())
 
 # COMMAND ----------
 
 # Read parameters from JSON config
 # -------------------------------------------------------------------------
-file_system = 'nhsxdatalakesagen2fsprod'
-new_source_path = 'land/nhsdigital/manual_upload/timestamp/csv/dspt_gp_practices/'
-historical_source_path = 'raw/nhsdigital/manual_upload/parquet/dspt_gp_practice/historical/'
-historical_source_file = 'dspt_gp_practice_historical.parquet'
-sink_path = 'raw/nhsdigital/manual_upload/parquet/dspt_gp_practice/historical/'
-sink_file = 'dspt_gp_practice_historical.parquet'
+file_system = config_JSON['pipeline']['adl_file_system']
+new_source_path = config_JSON['pipeline']['raw']['snapshot_source_path']
+historical_source_path = config_JSON['pipeline']['raw']['appended_path']
+historical_source_file = config_JSON['pipeline']['raw']['appended_file']
+sink_path = config_JSON['pipeline']['raw']['appended_path']
+sink_file = config_JSON['pipeline']['raw']['appended_file']
 
 # COMMAND ----------
 
