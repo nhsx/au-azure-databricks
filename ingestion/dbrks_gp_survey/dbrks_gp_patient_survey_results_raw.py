@@ -103,7 +103,7 @@ new_dataframe.rename(columns = {'Practice_Code': 'Practice code',  #----------- 
 new_dataframe.insert(0,'Date','')
 new_dataframe.insert(0,'Collection end date','')
 new_dataframe.insert(0,'Collection start date','')
-date = int(latestFolder[0:4])
+date = str(latestFolder[0:4])
 new_dataframe["Date"] = date
 new_dataframe["Collection start date"] = "2021-01-01" #----------- Change values year-on-year. Please see SOP.
 new_dataframe["Collection end date"] = "2021-03-01" #----------- Change values year-on-year. Please see SOP.
