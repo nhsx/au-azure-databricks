@@ -103,12 +103,14 @@ new_dataframe.rename(columns = {'Practice_Code': 'Practice code',  #----------- 
 new_dataframe.insert(0,'Date','')
 new_dataframe.insert(0,'Collection end date','')
 new_dataframe.insert(0,'Collection start date','')
-date = str(latestFolder[0:4])
+date = str(latestFolder[0:10])
 new_dataframe["Date"] = date
 new_dataframe["Collection start date"] = "2021-01-01" #----------- Change values year-on-year. Please see SOP.
 new_dataframe["Collection end date"] = "2021-03-01" #----------- Change values year-on-year. Please see SOP.
 
-# pull historical dataset
+# COMMAND ----------
+
+# Pull historical dataset
 latestFolder_historical = datalake_latestFolder(CONNECTION_STRING, file_system, historical_source_path)
 historical_dataset = datalake_download(CONNECTION_STRING, file_system, historical_source_path+latestFolder_historical, historical_source_file)
 historical_dataframe = pd.read_parquet(io.BytesIO(historical_dataset), engine="pyarrow")
@@ -127,6 +129,7 @@ else:
 # COMMAND ----------
 
 # Upload processed data to datalake
+current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
 file_contents = io.BytesIO()
 historical_dataframe.to_parquet(file_contents, engine="pyarrow")
-datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+latestFolder, sink_file)
+datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, sink_file)
