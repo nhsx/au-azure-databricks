@@ -10,7 +10,7 @@
 """
 FILE:           dbrks_cybersecurity_dspt_gp_practices_standards_exceed_year_count_prop.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric: M077A: No. and % of GP practices that exceed the 20/21 DSPT standard (yearly historical)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric: M077A: No. and % of GP practices that exceed the DSPT standard (yearly historical)
 USAGE:
                 ...
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli, Muhammad-Faaiz Shanawas
@@ -76,6 +76,19 @@ sink_file = config_JSON['pipeline']['project']['databricks'][1]['sink_file']
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
+df["Snapshot_Date"] = pd.to_datetime(df["Snapshot_Date"])
+df["Edition flag"] = df["DSPT_Edition"].str[2:4] + "/" + df["DSPT_Edition"].str[7:] + " STANDARDS EXCEEDED"
+df["Status_Raw"] = df["Status_Raw"].str.upper()
+def appointments_enabled(c):
+  if c['Status_Raw'] == c['Edition flag']:
+    return 1
+  else:
+    return 0
+df['Number of GP Practices That Exceeed the DSPT Standard'] = df.apply(appointments_enabled, axis=1)
+df.rename(columns={"Code":"Practice code", "DSPT_Edition":"Financial year", "Snapshot_Date": "Date"}, inplace = True)
+df1 = df.drop(["Organisation_Name", "Status_Raw", "Edition flag"], axis = 1)
+df1.index.name = "Unique ID"
+df_processed = df1.copy()
 
 # COMMAND ----------
 

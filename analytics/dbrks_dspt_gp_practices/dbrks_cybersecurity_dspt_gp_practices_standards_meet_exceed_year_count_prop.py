@@ -82,6 +82,92 @@ df
 
 # COMMAND ----------
 
+#add code
+#rename index column as Unique ID
+#rename code as Practice code
+#rename DSPT_edition as Date
+#drop status_raw after processing flags
+#drop snapshot_date
+#metric flag column name Number of GP practices that meet and exceed the DSPT standard (historical) (descriptive name for the metric)
+
+# COMMAND ----------
+
+#run this function to append the m76a column as binary flags for the specified DSPT metric
+#the funciton then assigns 1 to all rows which meet or exceed the DSPT standard
+
+#this function is ued in set_flag_conditions to check if the current DSPT status contains years in their labels by checking for digits in the status
+def contains_digits(input_string):
+  flag = False
+  for character in input_string:
+    if character.isdigit() == True:
+      flag = True
+  return flag #returns a true value if the status has got digits and false otherwise
+
+def set_flags_m76a(df, year):
+  #initialise m76a column
+  num_rows = df.shape[0]
+  m76a_init_list = [0] * num_rows
+  
+  #we will name this M076 for initialisation to make it easier to set the flags
+  #this will be renamed in the format dataframe function
+  df["M076"] = m76a_init_list
+
+  #first we define the current year being processed and previous year as e.g 18 and 19 for 2018 and 2019
+  #we also define the current and next year as some exceptions publish according to next year standards 
+  last_year = year - 1
+  next_year = year + 1
+  year_shortened = str(year)[2:4]
+  last_year_shortened = str(last_year)[2:4]
+  next_year_shortened = str(next_year)[2:4]
+  
+
+  #we iterate through the rows in the dataframe under the Status_Raw column using the indexes
+  for index in range(0, num_rows):
+    current_status = str(df.Status_Raw[index])
+  #we have 2 sets of conditions, 1 if the status contains digits/years and 1 otherwise
+    if (contains_digits(current_status) == True):
+      #check if the status (contains the current and last year e.g 18/19 for 2019) or the (current year and the next year e.g 19/20 for 2019) to meet or exceed DSPT requirements as specified
+      if ((year_shortened in current_status) and (last_year_shortened in current_status) or ((year_shortened in current_status) and (next_year_shortened in current_status))):
+        if (("MET" in current_status.upper()) or ("EXCEEDED" in current_status.upper())):
+          df.M076[index] = 1
+
+    else:
+      #similar conditions for if the status does not contain the year we just need to check for the word only
+      if (("MET" in current_status.upper()) or ("EXCEEDED" in current_status.upper())):
+        df.M076[index] = 1
+      
+  return df
+  
+  
+#run this function to format the dataframe after setting flags for m76a
+def format_dspt_dataframe(df):
+  #rename index column as Unique ID
+  df["Unique ID"] = df.index.name
+  #rename code as Practice code
+  df.rename(columns={"Code":"Practice code"}, inplace = True)
+  #rename DSPT_edition as Date
+  df.rename(columns={"DSPT_Edition":"Date"}, inplace = True)
+  #rename M076 column
+  df.rename(columns={"M076":"Number of GP Practices That Meet or Exceeed the DSPT Standard"})
+  #drop snapshot_date and Status_Raw
+  df = df.drop(["Snapshot_Date", "Status_Raw"], axis = 1)
+
+# COMMAND ----------
+
+#code to run functions which will set flags and format the dataframe
+
+#get this function from the helper functions to be used in set_flags
+#if this is not possible can recode this function
+year = get_year_dspt_gp(upload_date)
+
+df = set_flags_m76a(df, year)
+df = format_dspt_dataframe(df)
+
+df['Flag bool'] = [x[0] in x[1] for x in zip(df["Edition flag"], df["Status_Raw"])]
+df
+
+# COMMAND ----------
+
 #Upload processed data to datalake
 file_contents = io.StringIO()
 df_processed.to_csv(file_contents)

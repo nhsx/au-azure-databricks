@@ -83,7 +83,7 @@ file_name_list = datalake_listContents(CONNECTION_STRING, file_system, new_sourc
 file_name_list = [file for file in file_name_list if '.csv' in file]
 for new_source_file in file_name_list:
   new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path+latestFolder, new_source_file)
-  fields = ['Practice_Code', 'Q114base', 'Q114_5', 'Q101base', 'Q101_4', 'q73base', 'Q73_1234base', 'q73_12' ] #----------- Change values year-on-year to select on the columns corresponding to the specific                                                                                                                             questions analysed. Please see SOP. 
+  fields = ['Practice_Code', 'Q114base', 'Q114_5', 'Q101base', 'Q101_4', 'q73base', 'Q73_1234base', 'q73_12' ] #----------- Change values year-on-year to select only the columns corresponding to the specific                                                                                                                    questions analysed. Please see SOP. 
   new_dataframe = pd.read_csv(io.BytesIO(new_dataset),usecols=fields)
 
 # COMMAND ----------
@@ -91,7 +91,7 @@ for new_source_file in file_name_list:
 # Processing
 # -------------------------------------------------------------------------
 # Latest data processing
-new_dataframe.rename(columns = {'Practice_Code': 'Practice code',  #----------- Change values year-on-year to select on the columns corresponding to the specific questions analysed. Please see SOP.
+new_dataframe.rename(columns = {'Practice_Code': 'Practice code',  #----------- Change values year-on-year to select only the columns corresponding to the specific questions analysed. Please see SOP.
                            'Q114base': 'M090_denominator', 
                            'Q114_5': 'M090_numerator',
                            'Q101base': 'M091_denominator',

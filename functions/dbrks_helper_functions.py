@@ -133,3 +133,11 @@ def get_snapshot_date(year, filename, num_rows):
   date = date.replace("_", "/")  
   snapshot_date_list = [date] * num_rows
   return snapshot_date_list
+
+#this function is ued in set_flag_conditions to check if the current DSPT status contains years in their labels by checking for digits in the status
+def contains_digits(input_string):
+  flag = False
+  for character in input_string:
+    if character.isdigit() == True:
+      flag = True
+  return flag #returns a true value if the status has got digits and false otherwise
