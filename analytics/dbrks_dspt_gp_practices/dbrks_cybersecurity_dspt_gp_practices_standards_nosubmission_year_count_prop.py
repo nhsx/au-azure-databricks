@@ -10,7 +10,7 @@
 """
 FILE:           dbrks_cybersecurity_dspt_gp_practices_standards_nosubmission_year_count_prop.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric: M078A: No. and % of GP practices that have not submitted 20/21 DSPT assessment (yearly historical)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric: M078A: No. and % of GP practices that have not submitted DSPT assessment (yearly historical)
 USAGE:
                 ...
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli, Muhammad-Faaiz Shanawas
