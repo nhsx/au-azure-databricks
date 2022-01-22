@@ -17,8 +17,8 @@ USAGE:
                 ...
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        02 Sept 2021
-VERSION:        0.0.1
+CREATED:        20 Jan 2021
+VERSION:        0.0.2
 """
 
 # COMMAND ----------
@@ -68,8 +68,7 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 # Read parameters from JSON config
 # -------------------------------------------------------------------------
 file_system = config_JSON['pipeline']['adl_file_system']
-new_source_path = config_JSON['pipeline']['raw']['sink_path']
-new_source_file = config_JSON['pipeline']['raw']['sink_file']
+new_source_path = config_JSON['pipeline']['raw']['snapshot_source_path']
 historical_source_path = config_JSON['pipeline']['raw']['appended_path']
 historical_source_file = config_JSON['pipeline']['raw']['appended_file']
 sink_path = config_JSON['pipeline']['raw']['appended_path']
@@ -77,14 +76,22 @@ sink_file = config_JSON['pipeline']['raw']['appended_file']
 
 # COMMAND ----------
 
+# Pull new snapshot dataset
+# -------------------------
+latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, new_source_path)
+file_name_list = datalake_listContents(CONNECTION_STRING, file_system, new_source_path+latestFolder)
+file_name_list = [file for file in file_name_list if '.csv' in file]
+for new_source_file in file_name_list:
+  new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path+latestFolder, new_source_file)
+  fields = ['Practice_Code', 'Q114base', 'Q114_5', 'Q101base', 'Q101_4', 'q73base', 'Q73_1234base', 'q73_12' ] #----------- Change values year-on-year to select only the columns corresponding to the specific                                                                                                                    questions analysed. Please see SOP. 
+  new_dataframe = pd.read_csv(io.BytesIO(new_dataset),usecols=fields)
+
+# COMMAND ----------
+
 # Processing
 # -------------------------------------------------------------------------
-# Pull latest raw dataset
-latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, new_source_path)
-new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path+latestFolder, new_source_file)
-fields = ['Practice_Code', 'Q114base', 'Q114_5', 'Q101base', 'Q101_4', 'q73base', 'Q73_1234base', 'q73_12' ]
-new_dataframe = pd.read_csv(io.BytesIO(new_dataset), usecols=fields)
-new_dataframe.rename(columns = {'Practice_Code': 'Practice code', 
+# Latest data processing
+new_dataframe.rename(columns = {'Practice_Code': 'Practice code',  #----------- Change values year-on-year to select only the columns corresponding to the specific questions analysed. Please see SOP.
                            'Q114base': 'M090_denominator', 
                            'Q114_5': 'M090_numerator',
                            'Q101base': 'M091_denominator',
@@ -96,14 +103,16 @@ new_dataframe.rename(columns = {'Practice_Code': 'Practice code',
 new_dataframe.insert(0,'Date','')
 new_dataframe.insert(0,'Collection end date','')
 new_dataframe.insert(0,'Collection start date','')
-date = '2021-01-01'
+date = str(latestFolder[0:10])
 new_dataframe["Date"] = date
-new_dataframe["Collection start date"] = "2021-01-01"
-new_dataframe["Collection end date"] = "2021-03-01"
+new_dataframe["Collection start date"] = "2021-01-01" #----------- Change values year-on-year. Please see SOP.
+new_dataframe["Collection end date"] = "2021-03-01" #----------- Change values year-on-year. Please see SOP.
 
-# pull historical dataset
-latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, historical_source_path)
-historical_dataset = datalake_download(CONNECTION_STRING, file_system, historical_source_path+latestFolder, historical_source_file)
+# COMMAND ----------
+
+# Pull historical dataset
+latestFolder_historical = datalake_latestFolder(CONNECTION_STRING, file_system, historical_source_path)
+historical_dataset = datalake_download(CONNECTION_STRING, file_system, historical_source_path+latestFolder_historical, historical_source_file)
 historical_dataframe = pd.read_parquet(io.BytesIO(historical_dataset), engine="pyarrow")
 
 # COMMAND ----------
@@ -120,6 +129,7 @@ else:
 # COMMAND ----------
 
 # Upload processed data to datalake
+current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
 file_contents = io.BytesIO()
 historical_dataframe.to_parquet(file_contents, engine="pyarrow")
-datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+latestFolder, sink_file)
+datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, sink_file)
