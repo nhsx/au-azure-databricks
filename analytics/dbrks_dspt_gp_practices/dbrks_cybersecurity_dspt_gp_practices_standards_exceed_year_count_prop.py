@@ -79,12 +79,15 @@ df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 df["Snapshot_Date"] = pd.to_datetime(df["Snapshot_Date"])
 df["Edition flag"] = df["DSPT_Edition"].str[2:4] + "/" + df["DSPT_Edition"].str[7:] + " STANDARDS EXCEEDED"
 df["Status_Raw"] = df["Status_Raw"].str.upper()
-def appointments_enabled(c):
+df["Status_Raw"] = df["Status_Raw"].replace({'STANDARDS MET (19-20)':'STANDARDS MET','NONE': 'NOT PUBLISHED'})
+df.loc[(df["DSPT_Edition"]=='2018/2019') & (df["Status_Raw"]== 'STANDARDS MET'), "Status_Raw"] = '18/19 STANDARDS MET'
+df.loc[(df["DSPT_Edition"]=='2018/2019') & (df["Status_Raw"]== 'STANDARDS EXCEEDED'), "Status_Raw"] = '18/19 STANDARDS EXCEEDED'
+def exceed_dspt(c):
   if c['Status_Raw'] == c['Edition flag']:
     return 1
   else:
     return 0
-df['Number of GP Practices That Exceeed the DSPT Standard'] = df.apply(appointments_enabled, axis=1)
+df['Number of GP practices that exceed the DSPT standard (historical)'] = df.apply(exceed_dspt, axis=1)
 df.rename(columns={"Code":"Practice code", "DSPT_Edition":"Financial year", "Snapshot_Date": "Date"}, inplace = True)
 df1 = df.drop(["Organisation_Name", "Status_Raw", "Edition flag"], axis = 1)
 df1.index.name = "Unique ID"

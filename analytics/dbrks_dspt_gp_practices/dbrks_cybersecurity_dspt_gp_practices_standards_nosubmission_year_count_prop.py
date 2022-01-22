@@ -76,79 +76,21 @@ sink_file = config_JSON['pipeline']['project']['databricks'][2]['sink_file']
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
-
-# COMMAND ----------
-
-#this function is ued in set_flag_conditions to check if the current DSPT status contains years in their labels by checking for digits in the status
-def contains_digits(input_string):
-  flag = False
-  for character in input_string:
-    if character.isdigit() == True:
-      flag = True
-  return flag #returns a true value if the status has got digits and false otherwise
-
-def set_flags_m78a(df, year):
-  #initialise m78a column
-  num_rows = df.shape[0]
-  m78a_init_list = [0] * num_rows
-  
-  #we will name this M076 for initialisation to make it easier to set the flags
-  #this will be renamed in the format dataframe function
-  df["M078"] = m78a_init_list
-
-  #first we define the current year being processed and previous year as e.g 18 and 19 for 2018 and 2019
-  #we also define the current and next year as some exceptions publish according to next year standards 
-  last_year = year - 1
-  next_year = year + 1
-  year_shortened = str(year)[2:4]
-  last_year_shortened = str(last_year)[2:4]
-  next_year_shortened = str(next_year)[2:4]
-  
-
-  #we iterate through the rows in the dataframe under the Status_Raw column using the indexes
-  for index in range(0, num_rows):
-    current_status = str(df.Status_Raw[index])
-  #we have 2 sets of conditions, 1 if the status contains digits/years and 1 otherwise
-    if (contains_digits(current_status) == True):
-      #check if the status (contains the current and last year e.g 18/19 for 2019) or the (current year and the next year e.g 19/20 for 2019) to meet or exceed DSPT requirements as specified
-      if ((year_shortened in current_status) and (last_year_shortened in current_status) or ((year_shortened in current_status) and (next_year_shortened in current_status))):
-        if (not(("MET" in current_status.upper()) or ("EXCEEDED" in current_status.upper()))):
-          df.M078[index] = 1
-
-    else:
-      #similar conditions for if the status does not contain the year we just need to check for the word only
-      if ("PUBLISHED" in current_status.upper())
-        df.M078[index] = 1
-      #finally check if the status is blank or null then we count this as not published and set M078 flag to 1 and others to 0
-      if pd.isnull(df['Status_Raw'].iloc[index]):
-        df.M078[index] = 1
-      
-  return df
-  
-  
-#run this function to format the dataframe after setting flags for m76a
-def format_dspt_dataframe(df):
-  #rename index column as Unique ID
-  df["Unique ID"] = df.index.name
-  #rename code as Practice code
-  df.rename(columns={"Code":"Practice code"}, inplace = True)
-  #rename DSPT_edition as Date
-  df.rename(columns={"DSPT_Edition":"Date"}, inplace = True)
-  #rename M078 column
-  df.rename(columns={"M078":"Number of GP Practices That Did Not Meet or Publish the DSPT Standard"})
-  #drop snapshot_date and Status_Raw
-  df = df.drop(["Snapshot_Date", "Status_Raw"], axis = 1)
-
-# COMMAND ----------
-
-#code to run functions which will set flags and format the dataframe
-
-#get this function from the helper functions to be used in set_flags
-#if this is not possible can recode this function
-year = get_year_dspt_gp(upload_date)
-
-df = set_flags_m78a(df, year)
-df = format_dspt_dataframe(df)
+df["Snapshot_Date"] = pd.to_datetime(df["Snapshot_Date"])
+df["Status_Raw"] = df["Status_Raw"].str.upper()
+df["Status_Raw"] = df["Status_Raw"].replace({'STANDARDS MET (19-20)':'STANDARDS MET','NONE': 'NOT PUBLISHED'})
+df.loc[(df["DSPT_Edition"]=='2018/2019') & (df["Status_Raw"]== 'STANDARDS MET'), "Status_Raw"] = '18/19 STANDARDS MET'
+df.loc[(df["DSPT_Edition"]=='2018/2019') & (df["Status_Raw"]== 'STANDARDS EXCEEDED'), "Status_Raw"] = '18/19 STANDARDS EXCEEDED'
+def dspt_not_published(c):
+  if c['Status_Raw'] == 'NOT PUBLISHED':
+    return 1
+  else:
+    return 0
+df['Number of GP practices that have not submitted a DSPT assessment (historical)'] = df.apply(dspt_not_published, axis=1)
+df.rename(columns={"Code":"Practice code", "DSPT_Edition":"Financial year", "Snapshot_Date": "Date"}, inplace = True)
+df1 = df.drop(["Organisation_Name", "Status_Raw"], axis = 1)
+df1.index.name = "Unique ID"
+df_processed = df1.copy()
 
 # COMMAND ----------
 
