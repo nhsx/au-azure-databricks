@@ -83,7 +83,7 @@ file_name_list = datalake_listContents(CONNECTION_STRING, file_system, new_sourc
 file_name_list = [file for file in file_name_list if '.csv' in file]
 for new_source_file in file_name_list:
   new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path+latestFolder, new_source_file)
-  new_dataframe = pd.read_csv(io.BytesIO(new_dataset)) #------- check if file is in .csv format. Please see SOP.
+  new_dataframe = pd.read_csv(io.BytesIO(new_dataset)) #------- Check if file is in .csv format. Please see SOP.
   new_dataframe["Date"] = "2020/2021" #----------- Change values year-on-year to the correct financial year. Please see SOP.
 
 # COMMAND ----------
@@ -91,8 +91,8 @@ for new_source_file in file_name_list:
 # Processing
 # -------------------------------------------------------------------------
 # Latest data processing
-new_dataframe = new_dataframe.rename(columns = {"Practice ODS code": "Practice ODS Code"}) #------Rename columns so that they align to the historical dataset. Please see SOP.
-df_processed = new_dataframe[new_dataframe["Practice ODS Code"].str.contains("Grand Total")==False] #------check a total has not been added to the file. Please see SOP.
+new_dataframe = new_dataframe.rename(columns = {"Practice ODS code": "Practice ODS Code"}) #------ Rename columns so that they align to the historical dataset. Please see SOP.
+df_processed = new_dataframe[new_dataframe["Practice ODS Code"].str.contains("Grand Total")==False] #------ Check a total has not been added to the file. Please see SOP.
 
 # COMMAND ----------
 
