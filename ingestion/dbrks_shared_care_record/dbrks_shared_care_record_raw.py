@@ -15,7 +15,7 @@ DESCRIPTION:
                 
 USAGE:
                 ...
-CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli
+CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli, Chris Todd
 CONTACT:        data@nhsx.nhs.uk
 CREATED:        19 Oct 2021
 VERSION:        0.0.1
@@ -45,6 +45,7 @@ import numpy as np
 import openpyxl
 from pathlib import Path
 from azure.storage.filedatalake import DataLakeServiceClient
+
 
 # Connect to Azure datalake
 # -------------------------------------------------------------------------
@@ -112,20 +113,27 @@ trust_df = pd.DataFrame()
 pcn_df = pd.DataFrame()
 other_df = pd.DataFrame()
 
+#loop through each file in the storage area
 for filename in directory:
     file = datalake_download(
         CONNECTION_STRING, file_system, source_path + latestFolder, filename
     )
+    #get list of sheet names from current file
     sheets = get_sheetnames_xlsx(io.BytesIO(file))
 
-    # STP calculations
+    ### STP calculations
+    #get list of sheets with STP in the name from list of all sheets - ideally 1?
     sheet_name = [sheet for sheet in sheets if sheet.startswith("STP")]
+    #read sheet
     xls_file = pd.read_excel(io.BytesIO(file), sheet_name=sheet_name, engine="openpyxl")
     for key in xls_file:
+        #drop unnamed columns
         xls_file[key].drop(
             list(xls_file[key].filter(regex="Unnamed:")), axis=1, inplace=True
         )
+        #remove empty rows
         xls_file[key] = xls_file[key].loc[~xls_file[key]["For Month"].isnull()]
+        #rename columns based on order
         xls_file[key].rename(
             columns={
                 list(xls_file[key])[0]: "For Month",
@@ -147,10 +155,12 @@ for filename in directory:
         STP_code = xls_file[key]["ODS STP Code"].unique()[0]  # get stp code for all sheets
         STP_name = xls_file[key]["STP Name"].unique()[0]  # get stp name for all sheets
         ICS_name = xls_file[key]["ICS Name (if applicable)"].unique()[0]  # get ics name for all sheets
-        xls_file[key]["Number of users with access to the ShCR"] = xls_file[key]["Number of users with access to the ShCR"].fillna(0).astype(int)
-        xls_file[key]["Number of citizen records available to users via the ShCR"] = xls_file[key]["Number of citizen records available to users via the ShCR"].fillna(0).astype(int)
-        xls_file[key]["Number of ShCR views in the past month"] = xls_file[key]["Number of ShCR views in the past month"].fillna(0).astype(int)
-        xls_file[key]["Number of unique user ShCR views in the past month"] = xls_file[key]["Number of unique user ShCR views in the past month"].fillna(0).astype(int)
+          
+        ##Adjusted to ignore errors where the value is not a number  
+        xls_file[key]["Number of users with access to the ShCR"] = xls_file[key]["Number of users with access to the ShCR"].fillna(0).astype(int, errors='ignore')
+        xls_file[key]["Number of citizen records available to users via the ShCR"] = xls_file[key]["Number of citizen records available to users via the ShCR"].fillna(0).astype(int, errors='ignore')
+        xls_file[key]["Number of ShCR views in the past month"] = xls_file[key]["Number of ShCR views in the past month"].fillna(0).astype(int, errors='ignore')
+        xls_file[key]["Number of unique user ShCR views in the past month"] = xls_file[key]["Number of unique user ShCR views in the past month"].fillna(0).astype(int, errors='ignore')
         # append to dataframe
         stp_df = stp_df.append(xls_file[key], ignore_index=True)
 
@@ -234,18 +244,58 @@ for filename in directory:
 
 # COMMAND ----------
 
-# Upload appended data to datalake
-current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
+b
 
-# STP
-file_contents = io.StringIO()
-stp_df.to_csv(file_contents, index=False)
-datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_stp_data_month_count.csv")
-# Trust
-file_contents = io.StringIO()
-trust_df.to_csv(file_contents, index=False)
-datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_trust_data_month_count.csv")
-# PCN
-file_contents = io.StringIO()
-pcn_df.to_csv(file_contents, index=False)
-datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_pcn_data_month_count.csv")
+# COMMAND ----------
+
+##Calculate aggregate numbers for Trusts
+trust_count_df = trust_df.groupby('STP Name')['Partner Organisation connected to ShCR?'].size().reset_index(name='Total')
+trust_count_df_2 = trust_df.groupby('STP Name')['Partner Organisation connected to ShCR?'].sum().reset_index(name='Total')
+trust_count_df['Number Connected'] = trust_count_df_2['Total']
+trust_count_df['Percent'] = trust_count_df_2['Total']/trust_count_df['Total']
+trust_count_df['Type'] = 'Trust'
+
+# COMMAND ----------
+
+##Calculate aggregate numbers for PCNs
+pcn_count_df = pcn_df.groupby('STP Name')['Partner Organisation connected to ShCR?'].size().reset_index(name='Total')
+pcn_count_df2 = pcn_df.groupby('STP Name')['Partner Organisation connected to ShCR?'].sum().reset_index(name='Total')
+pcn_count_df['Number Connected'] = pcn_count_df2['Total']
+pcn_count_df['Percent'] = pcn_count_df2['Total']/pcn_count_df['Total']
+pcn_count_df['Type'] = 'PCN'
+
+# COMMAND ----------
+
+#Write pages to Excel file in iobytes
+files = [stp_df, trust_df, trust_count_df, pcn_df, pcn_df_count]
+sheets = ['STP', 'Trust', 'Trust Count', 'PCN', 'PCN Count']
+excel_sheet = io.BytesIO()
+
+writer = pd.ExcelWriter(excel_sheet, engine='openpyxl')
+for count, file in enumerate(files):
+    file.to_excel(writer, sheet_name=sheets[count], index=False)
+writer.save()
+
+# COMMAND ----------
+
+#Send Excel File to test Output in datalake
+file_contents = excel_sheet
+datalake_upload(file_contents, CONNECTION_STRING, "nhsxdatalakesagen2fsprod", "test", "excel_output.xlsx")
+
+# COMMAND ----------
+
+# # Upload appended data to datalake
+# current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
+
+# # STP
+# file_contents = io.StringIO()
+# stp_df.to_csv(file_contents, index=False)
+# datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_stp_data_month_count.csv")
+# # Trust
+# file_contents = io.StringIO()
+# trust_df.to_csv(file_contents, index=False)
+# datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_trust_data_month_count.csv")
+# # PCN
+# file_contents = io.StringIO()
+# pcn_df.to_csv(file_contents, index=False)
+# datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_pcn_data_month_count.csv")

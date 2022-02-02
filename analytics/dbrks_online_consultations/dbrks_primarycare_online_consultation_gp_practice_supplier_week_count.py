@@ -80,7 +80,7 @@ file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolde
 df = pd.read_csv(io.BytesIO(file))
 df1 = df[df['Valid_Practice'] == 1]
 df2 = df1[["Week Commencing", "Practice Code", "oc_supplier_system"]]
-df2['oc_supplier_system'] = df2['oc_supplier_system'].replace(np.nan, 'NONE')
+df2['oc_supplier_system'] = df2['oc_supplier_system'].replace(np.nan, 'UNKNOWN')
 df2['oc_supplier_system'] = df2['oc_supplier_system'].str.replace('^\d+', 'UNKNOWN')
 df2.rename(columns={"oc_supplier_system": "Online consultation system supplier", "Practice Code": "Practice code"},inplace=True)
 df2['Count'] = 1
