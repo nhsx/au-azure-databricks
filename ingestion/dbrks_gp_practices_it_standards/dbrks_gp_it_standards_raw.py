@@ -84,7 +84,8 @@ file_name_list = [file for file in file_name_list if '.csv' in file]
 for new_source_file in file_name_list:
   new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path+latestFolder, new_source_file)
   new_dataframe = pd.read_csv(io.BytesIO(new_dataset)) #------- Check if file is in .csv format. Please see SOP.
-  new_dataframe["Date"] = "2020/2021" #----------- Change values year-on-year to the correct financial year. Please see SOP.
+  new_dataframe["Financial Year"] = "2020/2021" #----------- Change values year-on-year to the correct financial year. Please see SOP.
+  new_dataframe["Date"] = new_dataframe["Financial Year"].unique().tolist()[0][5:9]+"-01-01"
 
 # COMMAND ----------
 
