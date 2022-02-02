@@ -73,7 +73,7 @@ sink_file = config_JSON['pipeline']['project']['databricks'][1]['sink_file']
 
 # COMMAND ----------
 
-# Processing
+# Processing 
 # -------------------------------------------------------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 reference_latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, reference_path)
@@ -82,86 +82,48 @@ reference_file = datalake_download(CONNECTION_STRING, file_system, reference_pat
 DSPT_df = pd.read_csv(io.BytesIO(file))
 ODS_code_df = pd.read_parquet(io.BytesIO(reference_file), engine="pyarrow")
 
+# Make all ODS codes in DSPT dataframe capital
+# -------------------------------------------------------------------------
 DSPT_df['Code'] = DSPT_df['Code'].str.upper()
 
+# Make ODS dataframe open and close dates datetime
+# -------------------------------------------------------------------------
 ODS_code_df['Close_Date'] = pd.to_datetime(ODS_code_df['Close_Date'], infer_datetime_format=True)
 ODS_code_df['Open_Date'] =  pd.to_datetime(ODS_code_df['Open_Date'], infer_datetime_format=True)
 
+# Join DSPT data with ODS table on ODS code
+# -------------------------------------------------------------------------
 DSPT_ODS = pd.merge(ODS_code_df, DSPT_df, how='outer', left_on="Code", right_on="Code")
 DSPT_ODS =DSPT_ODS.reset_index(drop=True).rename(columns={"ODS_API_Role_Name": "Sector",})
 DSPT_ODS_selection =  DSPT_ODS[(DSPT_ODS['Close_Date'].isna())].reset_index(drop = True)
 
+# Creation of final dataframe with all currently open CCGs and CSUs
+# -------------------------------------------------------------------------
 DSPT_ODS_selection_1 = DSPT_ODS_selection[ 
 (DSPT_ODS_selection["Name"].str.contains("COMMISSIONING HUB")==False) &
-(DSPT_ODS_selection["Code"].str.contains("RT4|RQF|RYT|0DH|0AD|0AP|0CC|0CG|0CH|0DG")==False) &
-(DSPT_ODS_selection["Sector"].str.contains("CLINICAL COMMISSIONING GROUP")==True) &
-(DSPT_ODS_selection["Sector"].str.contains("COMMISSIONING SUPPORT UNIT")==True) 
-].reset_index(drop=True)
+(DSPT_ODS_selection["Code"].str.contains("RT4|RQF|RYT|0DH|0AD|0AP|0CC|0CG|0CH|0DG")==False)].reset_index(drop=True) #------ change exclusion codes for CCGs and CSUs through time. Please see SOP
+DSPT_ODS_selection_2 = DSPT_ODS_selection_1[DSPT_ODS_selection_1.Sector.isin(["CLINICAL COMMISSIONING GROUP", "COMMISSIONING SUPPORT UNIT"])].reset_index(drop=True)
+
+# Creation of final dataframe with all currently open CCGs and CSUs which meet or exceed the DSPT standard
+# --------------------------------------------------------------------------------------------------------
+DSPT_ODS_selection_3 = DSPT_ODS_selection_2[DSPT_ODS_selection_2["Latest Status"].isin(["20/21 Standards Met", 
+                                                                                         "20/21 Standards Exceeded", 
+                                                                                         "21/22 Standards Met", 
+                                                                                         "21/22 Standards Exceeded"])].reset_index(drop=True) #------ change financial year for DSPT standard through time. Please see SOP
 
 # COMMAND ----------
 
-DSPT_ODS_selection_1
-
-
-# COMMAND ----------
-
-106+5 
-111
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-date_string = str(datetime.now().strftime("%Y-%m-%d"))
-
-
-
-
-
-df_count = df_filtered.groupby("Latest Status").size()
-df_percent = (df_filtered.groupby("Latest Status").size() / len(df_filtered.index))
-df = pd.concat([df_count, df_percent], axis=1).reset_index()
-
-df.columns = ["Organisation Latest DSPT Status", "Count", "Percent of Total"]
-
-df = df[
-(df["Organisation Latest DSPT Status"] == "20/21 Standards Met") |
-(df["Organisation Latest DSPT Status"] == "20/21 Standards Exceeded") |df["Organisation Latest DSPT Status"] == "21/22 Standards Met")
-].reset_index(drop=True)
-
-Total_Count = df["Count"].sum()
-Total_Social_orgs = df_filtered[df_filtered.columns[0]].count()
-Total_Percent = df["Percent of Total"].sum()
-
-Data_f = [[
-"Standards Met or Exceeded",
-Total_Count,
-Total_Social_orgs,
-Total_Percent,
-date_string,
-]]
-
-df_output = pd.DataFrame(Data_f,
-    columns=[
-        "DSPT status",
-        "Number of CSUs and CCGs with a standards met or exceeded DSPT status",
-        "Total number of CSUs and CCGs",
-        "Percent of CSUs and CCGs with a standards met or exceeded DSPT status",
-        "Date",
-    ],
-)
+# Processing - Generating final dataframe for staging to SQL database
+# -------------------------------------------------------------------------
+date_string = str(datetime.now().strftime("%Y-%m"))
+met_exceed_csu_ccg = DSPT_ODS_selection_3["Code"].count()
+total_no_csu_ccg = DSPT_ODS_selection_2["Code"].count()
+data = [[date_string, met_exceed_csu_ccg, total_no_csu_ccg]]
+df_output = pd.DataFrame(data, columns=["Date", "Number of CSUs and CCGs with a standards met or exceeded DSPT status", "Total number of CSUs and CCGs"])
+df_output["Percent of CSUs and CCGs with a standards met or exceeded DSPT status"] = df_output["Number of CSUs and CCGs with a standards met or exceeded DSPT status"]/df_output["Total number of CSUs and CCGs"]
 df_output = df_output.round(4)
 df_output.index.name = "Unique ID"
-
 df_processed = df_output.copy()
-
-# COMMAND ----------
-
-df_processed 
 
 # COMMAND ----------
 
