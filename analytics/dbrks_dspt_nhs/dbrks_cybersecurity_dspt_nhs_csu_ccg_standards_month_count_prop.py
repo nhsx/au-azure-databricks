@@ -87,36 +87,59 @@ ODS_code_df = pd.read_parquet(io.BytesIO(reference_file), engine="pyarrow")
 
 # COMMAND ----------
 
-DSPT_df
+DSPT_df['Code'] = DSPT_df['Code'].str.upper()
+
+
+# COMMAND ----------
+
+ODS_code_df['Close_Date'] = pd.to_datetime(ODS_code_df['Close_Date'], infer_datetime_format=True)
+ODS_code_df['Open_Date'] =  pd.to_datetime(ODS_code_df['Open_Date'], infer_datetime_format=True)
 
 # COMMAND ----------
 
 
 
-date = datetime.now().strftime("%Y-%m-%d")
-date_string = str(date)
-DSPT_df['Code'] = DSPT_df['Code'].str.upper()
-ODS_code_df['Close_Date'] = pd.to_datetime(ODS_code_df['Close_Date'], infer_datetime_format=True)
-ODS_code_df['Open_Date'] =  pd.to_datetime(ODS_code_df['Open_Date'], infer_datetime_format=True)
+# COMMAND ----------
+
 DSPT_ODS = pd.merge(ODS_code_df, DSPT_df, how='outer', left_on="Code", right_on="Code")
-
 DSPT_ODS =DSPT_ODS.reset_index(drop=True).rename(columns={"ODS_API_Role_Name": "Sector",})
+DSPT_ODS_selection =  DSPT_ODS[(DSPT_ODS['Close_Date'].isna())].reset_index(drop = True)
 
-close_date = datetime.strptime('2021-03-30 00:00:00', '%Y-%m-%d %H:%M:%S')
-open_date = datetime.strptime('2021-03-30 00:00:00', '%Y-%m-%d %H:%M:%S')
+# COMMAND ----------
 
-DSPT_ODS_selection =  DSPT_ODS[(DSPT_ODS['Close_Date'].isna()) | (DSPT_ODS['Close_Date'] > close_date)]
+DSPT_ODS_selection 
 
-DSPT_ODS_selection = DSPT_ODS_selection[
-(DSPT_ODS_selection['Open_Date'] < open_date) & 
+# COMMAND ----------
+
+DSPT_ODS_selection_1 = DSPT_ODS_selection[ 
 (DSPT_ODS_selection["Name"].str.contains("COMMISSIONING HUB")==False) &
-(DSPT_ODS_selection["Code"].str.contains("RT4|RQF|RYT|0DH|0AD|0AP|0CC|0CG|0CH|0DG")==False)
+(DSPT_ODS_selection["Code"].str.contains("RT4|RQF|RYT|0DH|0AD|0AP|0CC|0CG|0CH|0DG")==False) #------- change codes here see SOP. 
 ].reset_index(drop=True)
+DSPT_ODS_selection_1 
 
-df_filtered = DSPT_ODS_selection[
-(DSPT_ODS_selection["Sector"] == "CLINICAL COMMISSIONING GROUP") |
-(DSPT_ODS_selection["Sector"] == "COMMISSIONING SUPPORT UNIT")
-].reset_index(drop=True)
+# COMMAND ----------
+
+df_filtered_1 = DSPT_ODS_selection_1[(DSPT_ODS_selection["Sector"] == "CLINICAL COMMISSIONING GROUP")|(DSPT_ODS_selection["Sector"] == "COMMISSIONING SUPPORT UNIT")].reset_index(drop=True)
+df_filtered_1
+
+# COMMAND ----------
+
+106+5 
+111
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+date_string = str(datetime.now().strftime("%Y-%m-%d"))
+
+
+
+
 
 df_count = df_filtered.groupby("Latest Status").size()
 df_percent = (df_filtered.groupby("Latest Status").size() / len(df_filtered.index))
@@ -126,7 +149,7 @@ df.columns = ["Organisation Latest DSPT Status", "Count", "Percent of Total"]
 
 df = df[
 (df["Organisation Latest DSPT Status"] == "20/21 Standards Met") |
-(df["Organisation Latest DSPT Status"] == "20/21 Standards Exceeded")
+(df["Organisation Latest DSPT Status"] == "20/21 Standards Exceeded") |df["Organisation Latest DSPT Status"] == "21/22 Standards Met")
 ].reset_index(drop=True)
 
 Total_Count = df["Count"].sum()
@@ -154,6 +177,10 @@ df_output = df_output.round(4)
 df_output.index.name = "Unique ID"
 
 df_processed = df_output.copy()
+
+# COMMAND ----------
+
+df_processed 
 
 # COMMAND ----------
 

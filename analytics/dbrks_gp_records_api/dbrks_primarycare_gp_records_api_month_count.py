@@ -90,11 +90,21 @@ df1 = df.drop([
         ], 
         axis=1
     )
-df1['Date of extract'] = pd.to_datetime(df1['Date of extract']).dt.strftime('%Y-%m')
-df2 = df1.groupby('Date of extract').mean().reset_index().round()
-df3 = df2.rename(columns = {'Date of extract': 'Date', 'Number of patient records viewed': 'Number of GP records accessed using the digital API'})
-df3.index.name = "Unique ID"
-df_processed = df3.copy()
+df1['Date of extract'] = pd.to_datetime(df1['Date of extract'])
+df1 = df1.rename(columns = {'Date of extract': 'Date'})
+df2 = df1.copy()
+df3 = df2.set_index('Date')
+resampled_date_list = []
+resampled_date_df = pd.DataFrame()
+resampled_date_list = df3.groupby(df3.index.month).apply(lambda x: x.index.max())
+resampled_date_df['Date'] = resampled_date_list 
+resampled_date_df = resampled_date_df.reset_index(drop = True)
+resampled_date_df_1 = resampled_date_df.merge(df1, how='left', on='Date')
+resampled_date_df_1 = resampled_date_df_1.sort_values(by='Date', ascending=True).reset_index(drop = True)
+df4 = resampled_date_df_1.rename(columns = {'Date of extract': 'Date', 'Number of patient records viewed': 'Number of GP records accessed using the digital API'})
+df4['Date'] = df4['Date'].dt.strftime("%Y-%m")
+df4.index.name = "Unique ID"
+df_processed = df4.copy()
 
 # COMMAND ----------
 
