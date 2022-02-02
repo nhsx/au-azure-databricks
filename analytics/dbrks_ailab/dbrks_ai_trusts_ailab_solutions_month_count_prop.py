@@ -77,9 +77,10 @@ sink_file = config_JSON['pipeline']['project']['sink_file']
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_csv(io.BytesIO(file))
-df['Percent of Number of Trusts with at least one NHS AI Lab solution trialled'] = df['Number of Trusts (England) with at least one NHS AI Lab solution trialled']/df['Total number of Trusts (England)']
+df['Percent of Trusts with at least one NHS AI Lab solution trialled'] = df['Number of Trusts (England) with at least one NHS AI Lab solution trialled']/df['Total number of Trusts (England)']
 df_1 = df.rename(columns = {'Number of Trusts (England) with at least one NHS AI Lab solution trialled': 'Number of Trusts with at least one NHS AI Lab solution trialled', 
                             "Total number of Trusts (England)": "Total number of Trusts"})
+df_1.index.name = "Unique ID"
 df_processed = df_1.copy()
 
 # COMMAND ----------

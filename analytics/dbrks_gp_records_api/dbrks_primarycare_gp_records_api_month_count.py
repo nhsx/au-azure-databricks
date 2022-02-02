@@ -85,12 +85,16 @@ df1 = df.drop([
         'Number of GP practices in England engaged in an appointment transaction',
         'Percent of GP practices in England engaged in an appointment transaction',
         'Number of GP practices in England that have been enabled to share appointments',
-        'Percent of GP practices in England that have been enabled to share appointments'
+        'Percent of GP practices in England that have been enabled to share appointments',
+        'Unique ID'
         ], 
         axis=1
     )
-df1 = df1.set_index('Unique ID')
-df_processed = df1.copy()
+df1['Date of extract'] = pd.to_datetime(df1['Date of extract']).dt.strftime('%Y-%m')
+df2 = df1.groupby('Date of extract').mean().reset_index().round()
+df3 = df2.rename(columns = {'Date of extract': 'Date', 'Number of patient records viewed': 'Number of GP records accessed using the digital API'})
+df3.index.name = "Unique ID"
+df_processed = df3.copy()
 
 # COMMAND ----------
 
