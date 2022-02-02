@@ -35,6 +35,7 @@ import os
 import io
 import tempfile
 from datetime import datetime
+from datetime import timedelta
 import json
 
 # 3rd party:
@@ -172,8 +173,34 @@ df_combined_sum = (
 df_combined_sum["Number of new open repositories"] = df_combined_sum[
         "Number of new open repositories"
     ].fillna(0)
+df_combined_sum
+
+# COMMAND ----------
+
+#Full list of dates between first time point and last timepoint
+# --------------------------------------------------------------
+
+first_date = df_combined_sum["Date"].iloc[0]
+last_date = df_combined_sum["Date"].iloc[-1]
+start = datetime.strptime(first_date + '-01', "%Y-%m-%d")
+end = datetime.strptime(last_date + '-01', "%Y-%m-%d")
+date_generated = [start + timedelta(days=x) for x in range(0, (end-start).days + 1)]
+df_date = []
+for date in date_generated:
+  df_date.append(date.strftime("%Y-%m"))
+df_date_unique  = pd.Series(df_date).drop_duplicates().tolist()
+df_date_check = pd.DataFrame()
+df_date_check['Date'] = df_date_unique
+df_date_check_1 = pd.merge(df_date_check, df_combined_sum, on="Date", how = 'left')
+df_date_check_1['Number of new open repositories'] = df_date_check_1['Number of new open repositories'].fillna(0)
+
+# COMMAND ----------
+
+#Calculate the cummulative number of repositories
+# --------------------------------------------------------------
+
 df_combined_cumsum = (
-        df_combined_sum.groupby(["Date"])
+        df_date_check_1.groupby(["Date"])
         .sum()
         .cumsum()
         .reset_index()
@@ -184,7 +211,7 @@ df_combined_cumsum = (
         )
     )
 df_combined_sum_cumssum = pd.merge(
-        df_combined_sum, df_combined_cumsum, on="Date", how="outer"
+        df_date_check_1, df_combined_cumsum, on="Date", how="outer"
     )
 df_combined_sum_cumssum.index.name = "Unique ID"
 df_raw = df_combined_sum_cumssum.copy()
