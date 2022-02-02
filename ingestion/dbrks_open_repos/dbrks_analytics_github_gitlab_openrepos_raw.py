@@ -173,7 +173,6 @@ df_combined_sum = (
 df_combined_sum["Number of new open repositories"] = df_combined_sum[
         "Number of new open repositories"
     ].fillna(0)
-df_combined_sum
 
 # COMMAND ----------
 

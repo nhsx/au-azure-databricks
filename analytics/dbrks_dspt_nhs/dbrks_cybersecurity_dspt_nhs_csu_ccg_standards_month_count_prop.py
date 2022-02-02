@@ -77,13 +77,21 @@ sink_file = config_JSON['pipeline']['project']['databricks'][1]['sink_file']
 # -------------------------------------------------------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 reference_latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, reference_path)
-
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 reference_file = datalake_download(CONNECTION_STRING, file_system, reference_path+reference_latestFolder, reference_file)
-
-
 DSPT_df = pd.read_csv(io.BytesIO(file))
 ODS_code_df = pd.read_parquet(io.BytesIO(reference_file), engine="pyarrow")
+
+
+
+
+# COMMAND ----------
+
+DSPT_df
+
+# COMMAND ----------
+
+
 
 date = datetime.now().strftime("%Y-%m-%d")
 date_string = str(date)
@@ -146,7 +154,6 @@ df_output = df_output.round(4)
 df_output.index.name = "Unique ID"
 
 df_processed = df_output.copy()
-
 
 # COMMAND ----------
 
