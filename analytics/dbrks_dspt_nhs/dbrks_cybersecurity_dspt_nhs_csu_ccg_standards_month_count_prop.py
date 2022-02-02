@@ -82,45 +82,26 @@ reference_file = datalake_download(CONNECTION_STRING, file_system, reference_pat
 DSPT_df = pd.read_csv(io.BytesIO(file))
 ODS_code_df = pd.read_parquet(io.BytesIO(reference_file), engine="pyarrow")
 
-
-
-
-# COMMAND ----------
-
 DSPT_df['Code'] = DSPT_df['Code'].str.upper()
-
-
-# COMMAND ----------
 
 ODS_code_df['Close_Date'] = pd.to_datetime(ODS_code_df['Close_Date'], infer_datetime_format=True)
 ODS_code_df['Open_Date'] =  pd.to_datetime(ODS_code_df['Open_Date'], infer_datetime_format=True)
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
 
 DSPT_ODS = pd.merge(ODS_code_df, DSPT_df, how='outer', left_on="Code", right_on="Code")
 DSPT_ODS =DSPT_ODS.reset_index(drop=True).rename(columns={"ODS_API_Role_Name": "Sector",})
 DSPT_ODS_selection =  DSPT_ODS[(DSPT_ODS['Close_Date'].isna())].reset_index(drop = True)
 
-# COMMAND ----------
-
-DSPT_ODS_selection 
-
-# COMMAND ----------
-
 DSPT_ODS_selection_1 = DSPT_ODS_selection[ 
 (DSPT_ODS_selection["Name"].str.contains("COMMISSIONING HUB")==False) &
-(DSPT_ODS_selection["Code"].str.contains("RT4|RQF|RYT|0DH|0AD|0AP|0CC|0CG|0CH|0DG")==False) #------- change codes here see SOP. 
+(DSPT_ODS_selection["Code"].str.contains("RT4|RQF|RYT|0DH|0AD|0AP|0CC|0CG|0CH|0DG")==False) &
+(DSPT_ODS_selection["Sector"].str.contains("CLINICAL COMMISSIONING GROUP")==True) &
+(DSPT_ODS_selection["Sector"].str.contains("COMMISSIONING SUPPORT UNIT")==True) 
 ].reset_index(drop=True)
-DSPT_ODS_selection_1 
 
 # COMMAND ----------
 
-df_filtered_1 = DSPT_ODS_selection_1[(DSPT_ODS_selection["Sector"] == "CLINICAL COMMISSIONING GROUP")|(DSPT_ODS_selection["Sector"] == "COMMISSIONING SUPPORT UNIT")].reset_index(drop=True)
-df_filtered_1
+DSPT_ODS_selection_1
+
 
 # COMMAND ----------
 

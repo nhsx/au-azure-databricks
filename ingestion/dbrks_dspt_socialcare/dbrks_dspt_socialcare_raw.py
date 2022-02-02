@@ -82,8 +82,8 @@ sink_file = config_JSON['pipeline']['raw']['appended_file']
 
 # Pull new snapshot dataset
 # -------------------------
-current_month = datetime.now().strftime('%B') + '/'
-last_month = (datetime.now() - relativedelta(months=1)).strftime('%B') + '/'
+current_month = datetime.now().strftime('%B') + ' National Data/'
+last_month = (datetime.now() - relativedelta(months=1)).strftime('%B') + ' National Data/'
 try:
   new_source_path_date = new_source_path + current_month
   latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, new_source_path_date)
