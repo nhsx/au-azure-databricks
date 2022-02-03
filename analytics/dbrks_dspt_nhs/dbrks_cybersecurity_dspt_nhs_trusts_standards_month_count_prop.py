@@ -97,7 +97,8 @@ DSPT_ODS =DSPT_ODS.reset_index(drop=True).rename(columns={"ODS_API_Role_Name": "
 close_date = datetime.strptime('2021-03-30 00:00:00', '%Y-%m-%d %H:%M:%S')
 open_date = datetime.strptime('2021-03-30 00:00:00', '%Y-%m-%d %H:%M:%S')
 
-DSPT_ODS_selection =  DSPT_ODS[(DSPT_ODS['Close_Date'].isna()) | (DSPT_ODS['Close_Date'] > close_date)]
+DSPT_ODS_selection =  DSPT_ODS[(DSPT_ODS['Close_Date'].isna()) | (DSPT_ODS['Close_Date'] > close_date)
+                              ]
 
 DSPT_ODS_selection = DSPT_ODS_selection[
 (DSPT_ODS_selection['Open_Date'] < open_date) & 

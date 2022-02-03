@@ -91,22 +91,28 @@ DSPT_df['Code'] = DSPT_df['Code'].str.upper()
 ODS_code_df['Close_Date'] = pd.to_datetime(ODS_code_df['Close_Date'], infer_datetime_format=True)
 ODS_code_df['Open_Date'] =  pd.to_datetime(ODS_code_df['Open_Date'], infer_datetime_format=True)
 
+# Set datefilter for org open and close dates
+# -------------------------------------------------------------------------
+close_date = datetime.strptime('2021-03-30','%Y-%m-%d') #------ change close date filter for CCGs and CSUs through time. Please see SOP
+open_date = datetime.strptime('2021-03-30','%Y-%m-%d') #------- change open date filter for CCGs and CSUs through time. Please see SOP
+
 # Join DSPT data with ODS table on ODS code
 # -------------------------------------------------------------------------
 DSPT_ODS = pd.merge(ODS_code_df, DSPT_df, how='outer', left_on="Code", right_on="Code")
 DSPT_ODS =DSPT_ODS.reset_index(drop=True).rename(columns={"ODS_API_Role_Name": "Sector",})
-DSPT_ODS_selection =  DSPT_ODS[(DSPT_ODS['Close_Date'].isna())].reset_index(drop = True)
+DSPT_ODS_selection =  DSPT_ODS[(DSPT_ODS['Close_Date'].isna() | (DSPT_ODS['Close_Date'] > close_date))].reset_index(drop = True)
+DSPT_ODS_selection_1 = (DSPT_ODS_selection[DSPT_ODS_selection['Open_Date'] < open_date]).reset_index(drop = True)
 
 # Creation of final dataframe with all currently open CCGs and CSUs
 # -------------------------------------------------------------------------
-DSPT_ODS_selection_1 = DSPT_ODS_selection[ 
-(DSPT_ODS_selection["Name"].str.contains("COMMISSIONING HUB")==False) &
-(DSPT_ODS_selection["Code"].str.contains("RT4|RQF|RYT|0DH|0AD|0AP|0CC|0CG|0CH|0DG")==False)].reset_index(drop=True) #------ change exclusion codes for CCGs and CSUs through time. Please see SOP
-DSPT_ODS_selection_2 = DSPT_ODS_selection_1[DSPT_ODS_selection_1.Sector.isin(["CLINICAL COMMISSIONING GROUP", "COMMISSIONING SUPPORT UNIT"])].reset_index(drop=True)
+DSPT_ODS_selection_2 = DSPT_ODS_selection_1[ 
+(DSPT_ODS_selection_1["Name"].str.contains("COMMISSIONING HUB")==False) &
+(DSPT_ODS_selection_1["Code"].str.contains("RT4|RQF|RYT|0DH|0AD|0AP|0CC|0CG|0CH|0DG")==False)].reset_index(drop=True) #------ change exclusion codes for CCGs and CSUs through time. Please see SOP
+DSPT_ODS_selection_3 = DSPT_ODS_selection_2[DSPT_ODS_selection_2.Sector.isin(["CLINICAL COMMISSIONING GROUP", "COMMISSIONING SUPPORT UNIT"])].reset_index(drop=True)
 
 # Creation of final dataframe with all currently open CCGs and CSUs which meet or exceed the DSPT standard
 # --------------------------------------------------------------------------------------------------------
-DSPT_ODS_selection_3 = DSPT_ODS_selection_2[DSPT_ODS_selection_2["Latest Status"].isin(["20/21 Standards Met", 
+DSPT_ODS_selection_4 = DSPT_ODS_selection_3[DSPT_ODS_selection_3["Latest Status"].isin(["20/21 Standards Met", 
                                                                                          "20/21 Standards Exceeded", 
                                                                                          "21/22 Standards Met", 
                                                                                          "21/22 Standards Exceeded"])].reset_index(drop=True) #------ change financial year for DSPT standard through time. Please see SOP
@@ -116,8 +122,8 @@ DSPT_ODS_selection_3 = DSPT_ODS_selection_2[DSPT_ODS_selection_2["Latest Status"
 # Processing - Generating final dataframe for staging to SQL database
 # -------------------------------------------------------------------------
 date_string = str(datetime.now().strftime("%Y-%m"))
-met_exceed_csu_ccg = DSPT_ODS_selection_3["Code"].count()
-total_no_csu_ccg = DSPT_ODS_selection_2["Code"].count()
+met_exceed_csu_ccg = DSPT_ODS_selection_4["Code"].count()
+total_no_csu_ccg = DSPT_ODS_selection_3["Code"].count()
 data = [[date_string, met_exceed_csu_ccg, total_no_csu_ccg]]
 df_output = pd.DataFrame(data, columns=["Date", "Number of CSUs and CCGs with a standards met or exceeded DSPT status", "Total number of CSUs and CCGs"])
 df_output["Percent of CSUs and CCGs with a standards met or exceeded DSPT status"] = df_output["Number of CSUs and CCGs with a standards met or exceeded DSPT status"]/df_output["Total number of CSUs and CCGs"]
