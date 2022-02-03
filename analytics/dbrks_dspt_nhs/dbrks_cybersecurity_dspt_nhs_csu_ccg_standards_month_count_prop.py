@@ -122,14 +122,19 @@ DSPT_ODS_selection_4 = DSPT_ODS_selection_3[DSPT_ODS_selection_3["Latest Status"
 # Processing - Generating final dataframe for staging to SQL database
 # -------------------------------------------------------------------------
 date_string = str(datetime.now().strftime("%Y-%m"))
+dspt_edition = "2020/2021"  #------ change DSPT edition through time. Please see SOP
 met_exceed_csu_ccg = DSPT_ODS_selection_4["Code"].count()
 total_no_csu_ccg = DSPT_ODS_selection_3["Code"].count()
-data = [[date_string, met_exceed_csu_ccg, total_no_csu_ccg]]
-df_output = pd.DataFrame(data, columns=["Date", "Number of CSUs and CCGs with a standards met or exceeded DSPT status", "Total number of CSUs and CCGs"])
+data = [[date_string, dspt_edition, met_exceed_csu_ccg, total_no_csu_ccg]]
+df_output = pd.DataFrame(data, columns=["Date", "DSPT edition", "Number of CSUs and CCGs with a standards met or exceeded DSPT status", "Total number of CSUs and CCGs"])
 df_output["Percent of CSUs and CCGs with a standards met or exceeded DSPT status"] = df_output["Number of CSUs and CCGs with a standards met or exceeded DSPT status"]/df_output["Total number of CSUs and CCGs"]
 df_output = df_output.round(4)
 df_output.index.name = "Unique ID"
 df_processed = df_output.copy()
+
+# COMMAND ----------
+
+df_processed
 
 # COMMAND ----------
 
