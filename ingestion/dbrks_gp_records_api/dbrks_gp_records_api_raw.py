@@ -118,6 +118,7 @@ df_new.columns = [
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, historical_source_path)
 historical_dataset = datalake_download(CONNECTION_STRING, file_system, historical_source_path+latestFolder, historical_source_file)
 historical_dataframe = pd.read_csv(io.BytesIO(historical_dataset), index_col = 0)
+historical_dataframe['Date of extract'] = pd.to_datetime(historical_dataframe['Date of extract']).dt.strftime('%Y-%m-%d')
 
 # Append new data to historical data
 # -----------------------------------------------------------------------
