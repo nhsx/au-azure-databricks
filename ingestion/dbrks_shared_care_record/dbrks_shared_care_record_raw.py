@@ -244,10 +244,6 @@ for filename in directory:
 
 # COMMAND ----------
 
-b
-
-# COMMAND ----------
-
 ##Calculate aggregate numbers for Trusts
 trust_count_df = trust_df.groupby('STP Name')['Partner Organisation connected to ShCR?'].size().reset_index(name='Total')
 trust_count_df_2 = trust_df.groupby('STP Name')['Partner Organisation connected to ShCR?'].sum().reset_index(name='Total')
@@ -267,7 +263,7 @@ pcn_count_df['Type'] = 'PCN'
 # COMMAND ----------
 
 #Write pages to Excel file in iobytes
-files = [stp_df, trust_df, trust_count_df, pcn_df, pcn_df_count]
+files = [stp_df, trust_df, trust_count_df, pcn_df, pcn_count_df]
 sheets = ['STP', 'Trust', 'Trust Count', 'PCN', 'PCN Count']
 excel_sheet = io.BytesIO()
 
@@ -279,23 +275,25 @@ writer.save()
 # COMMAND ----------
 
 #Send Excel File to test Output in datalake
+current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
+
 file_contents = excel_sheet
-datalake_upload(file_contents, CONNECTION_STRING, "nhsxdatalakesagen2fsprod", "test", "excel_output.xlsx")
+datalake_upload(file_contents, CONNECTION_STRING, "nhsxdatalakesagen2fsprod", "proc/projects/nhsx_slt_analytics/shcr/excel_summary/"+current_date_path, "excel_output.xlsx")
 
 # COMMAND ----------
 
-# # Upload appended data to datalake
-# current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
+# Upload appended data to datalake
+current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
 
-# # STP
-# file_contents = io.StringIO()
-# stp_df.to_csv(file_contents, index=False)
-# datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_stp_data_month_count.csv")
-# # Trust
-# file_contents = io.StringIO()
-# trust_df.to_csv(file_contents, index=False)
-# datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_trust_data_month_count.csv")
-# # PCN
-# file_contents = io.StringIO()
-# pcn_df.to_csv(file_contents, index=False)
-# datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_pcn_data_month_count.csv")
+# STP
+file_contents = io.StringIO()
+stp_df.to_csv(file_contents, index=False)
+datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_stp_data_month_count.csv")
+# Trust
+file_contents = io.StringIO()
+trust_df.to_csv(file_contents, index=False)
+datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_trust_data_month_count.csv")
+# PCN
+file_contents = io.StringIO()
+pcn_df.to_csv(file_contents, index=False)
+datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_pcn_data_month_count.csv")
