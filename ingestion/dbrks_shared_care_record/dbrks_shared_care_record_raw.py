@@ -122,15 +122,13 @@ for filename in directory:
     sheets = get_sheetnames_xlsx(io.BytesIO(file))
 
     ### STP calculations
-    #get list of sheets with STP in the name from list of all sheets - ideally 1?
+    #list comprehension to get sheets with STP in the name from list of all sheets - ideally 1?
     sheet_name = [sheet for sheet in sheets if sheet.startswith("STP")]
-    #read sheet
+    #read sheet. Output is a dictionary of columns
     xls_file = pd.read_excel(io.BytesIO(file), sheet_name=sheet_name, engine="openpyxl")
     for key in xls_file:
         #drop unnamed columns
-        xls_file[key].drop(
-            list(xls_file[key].filter(regex="Unnamed:")), axis=1, inplace=True
-        )
+        xls_file[key].drop(list(xls_file[key].filter(regex="Unnamed:")), axis=1, inplace=True)
         #remove empty rows
         xls_file[key] = xls_file[key].loc[~xls_file[key]["For Month"].isnull()]
         #rename columns based on order
@@ -156,11 +154,12 @@ for filename in directory:
         STP_name = xls_file[key]["STP Name"].unique()[0]  # get stp name for all sheets
         ICS_name = xls_file[key]["ICS Name (if applicable)"].unique()[0]  # get ics name for all sheets
           
-        ##Adjusted to ignore errors where the value is not a number  
-        xls_file[key]["Number of users with access to the ShCR"] = xls_file[key]["Number of users with access to the ShCR"].fillna(0).astype(int, errors='ignore')
-        xls_file[key]["Number of citizen records available to users via the ShCR"] = xls_file[key]["Number of citizen records available to users via the ShCR"].fillna(0).astype(int, errors='ignore')
-        xls_file[key]["Number of ShCR views in the past month"] = xls_file[key]["Number of ShCR views in the past month"].fillna(0).astype(int, errors='ignore')
-        xls_file[key]["Number of unique user ShCR views in the past month"] = xls_file[key]["Number of unique user ShCR views in the past month"].fillna(0).astype(int, errors='ignore')
+        #Fill in blanks with zeros. Replace any non numeric entries with zero
+        xls_file[key]["Number of users with access to the ShCR"] = pd.to_numeric(xls_file[key]["Number of users with access to the ShCR"], errors='coerce').fillna(0).astype(int)
+        xls_file[key]["Number of citizen records available to users via the ShCR"] = pd.to_numeric(xls_file[key]["Number of citizen records available to users via the ShCR"], errors='coerce').fillna(0).astype(int)
+        xls_file[key]["Number of ShCR views in the past month"] = pd.to_numeric(xls_file[key]["Number of ShCR views in the past month"], errors='coerce').fillna(0).astype(int)
+        xls_file[key]["Number of unique user ShCR views in the past month"] = pd.to_numeric(xls_file[key]["Number of unique user ShCR views in the past month"], errors='coerce').fillna(0).astype(int)
+
         # append to dataframe
         stp_df = stp_df.append(xls_file[key], ignore_index=True)
 
@@ -168,9 +167,8 @@ for filename in directory:
     sheet_name = [sheet for sheet in sheets if sheet.startswith("Trust")]
     xls_file = pd.read_excel(io.BytesIO(file), sheet_name=sheet_name, engine="openpyxl")
     for key in xls_file:
-        xls_file[key].drop(
-            list(xls_file[key].filter(regex="Unnamed:")), axis=1, inplace=True
-        )
+        xls_file[key].drop(list(xls_file[key].filter(regex="Unnamed:")), axis=1, inplace=True)
+
         xls_file[key] = xls_file[key].loc[~xls_file[key]["For Month"].isnull()]
         xls_file[key].rename(
             columns={
@@ -186,23 +184,20 @@ for filename in directory:
         xls_file[key].insert(1, "ODS STP Code", STP_code, False)
         xls_file[key].insert(2, "STP Name", STP_name, False)
         xls_file[key].insert(3, "ICS Name (if applicable)", ICS_name, False)
-        xls_file[key]["Partner Organisation connected to ShCR?"] = xls_file[key][
-            "Partner Organisation connected to ShCR?"
-        ].map({"yes": 1, "no": 0, "Yes": 1, "No": 0})
-        xls_file[key][
-            "Partner Organisation primary clinical system connect directly to the ShCR?"
-        ] = xls_file[key]["Partner Organisation primary clinical system connect directly to the ShCR?"].map(
-            {"yes": 1, "no": 0, "Yes": 1, "No": 0}
-        )
+        xls_file[key]["Partner Organisation connected to ShCR?"] = xls_file[key]["Partner Organisation connected to ShCR?"].map({"yes": 1, "no": 0, "Yes": 1, "No": 0}).fillna(0)   
+        xls_file[key]["Partner Organisation primary clinical system connect directly to the ShCR?"] = xls_file[key]["Partner Organisation primary clinical system connect directly to the ShCR?"].map({"yes": 1, "no": 0, "Yes": 1, "No": 0}).fillna(0)   
+        xls_file[key]["Partner Organisation plans to be connected by Sept 2021?"] = xls_file[key]["Partner Organisation plans to be connected by Sept 2021?"].map({"yes": 1, "no": 0, "Yes": 1, "No": 0}).fillna(0)        
         trust_df = trust_df.append(xls_file[key].iloc[:, 0:9], ignore_index=True)
+
 
     # PCN calculations
     sheet_name = [sheet for sheet in sheets if sheet.startswith("PCN")]
     xls_file = pd.read_excel(io.BytesIO(file), sheet_name=sheet_name, engine="openpyxl")
+    
     for key in xls_file:
-        xls_file[key].drop(
-            list(xls_file[key].filter(regex="Unnamed:")), axis=1, inplace=True
-        )
+        #this isn't working properly - maybe switch to list of columns we DO want? 
+        xls_file[key].drop(list(xls_file[key].filter(regex="Unnamed:")), axis=1, inplace=True)
+        
         xls_file[key] = xls_file[key].loc[~xls_file[key]["For Month"].isnull()]
         xls_file[key].rename(
             columns={
@@ -218,10 +213,12 @@ for filename in directory:
         xls_file[key].insert(1, "ODS STP Code", STP_code, False)
         xls_file[key].insert(2, "STP Name", STP_name, False)
         xls_file[key].insert(3, "ICS Name (if applicable)", ICS_name, False)
-        xls_file[key]["Partner Organisation connected to ShCR?"] = xls_file[key]["Partner Organisation connected to ShCR?"].map({"yes": 1, "no": 0, "Yes": 1, "No": 0})
-        xls_file[key]["Partner Organisation primary clinical system connect directly to the ShCR?"] = xls_file[key]["Partner Organisation primary clinical system connect directly to the ShCR?"].map({"yes": 1, "no": 0, "Yes": 1, "No": 0})
-        pcn_df = pcn_df.append(xls_file[key], ignore_index=True)
+        xls_file[key]["Partner Organisation connected to ShCR?"] = xls_file[key]["Partner Organisation connected to ShCR?"].map({"yes": 1, "no": 0, "Yes": 1, "No": 0}).fillna(0)   
+        xls_file[key]["Partner Organisation primary clinical system connect directly to the ShCR?"] = xls_file[key]["Partner Organisation primary clinical system connect directly to the ShCR?"].map({"yes": 1, "no": 0, "Yes": 1, "No": 0}).fillna(0)   
+        xls_file[key]["Partner Organisation plans to be connected by Sept 2021?"] = xls_file[key]["Partner Organisation plans to be connected by Sept 2021?"].map({"yes": 1, "no": 0, "Yes": 1, "No": 0}).fillna(0)   
 
+        pcn_df = pcn_df.append(xls_file[key], ignore_index=True)
+        
     # Other calculations
     # sheet_name = [sheet for sheet in sheets if sheet.startswith('Other')]
     # xls_file = pd.read_excel(io.BytesIO(file), sheet_name=sheet_name, engine='openpyxl')
@@ -241,6 +238,9 @@ for filename in directory:
     # xls_file[key].insert(3, "ICS Name (if applicable)", ICS_name, False)
     # print(list(xls_file[key]))
     # other_df = other_df.append(xls_file[key], ignore_index=True)
+    
+#find a better way to do this bit  - removes the details, comments and " " columns that were appearing 
+pcn_df = pcn_df.iloc[:,0:9]
 
 # COMMAND ----------
 
