@@ -113,24 +113,25 @@ trust_df = pd.DataFrame()
 pcn_df = pd.DataFrame()
 other_df = pd.DataFrame()
 
-#loop through each file in the storage area
+#loop through each submitted file in the landing area
 for filename in directory:
-    file = datalake_download(
-        CONNECTION_STRING, file_system, source_path + latestFolder, filename
-    )
-    #get list of sheet names from current file
+    file = datalake_download(CONNECTION_STRING, file_system, source_path + latestFolder, filename)
+    
+    #Read current file inot an iobytes object, read that object and get list of sheet names
     sheets = get_sheetnames_xlsx(io.BytesIO(file))
 
-    ### STP calculations
+    ### STP CALCULATIONS ###
     #list comprehension to get sheets with STP in the name from list of all sheets - ideally 1?
     sheet_name = [sheet for sheet in sheets if sheet.startswith("STP")]
-    #read sheet. Output is a dictionary of columns
+    
+    #Read current sheet. The output is a dictionary of columns
     xls_file = pd.read_excel(io.BytesIO(file), sheet_name=sheet_name, engine="openpyxl")
     for key in xls_file:
         #drop unnamed columns
         xls_file[key].drop(list(xls_file[key].filter(regex="Unnamed:")), axis=1, inplace=True)
         #remove empty rows
         xls_file[key] = xls_file[key].loc[~xls_file[key]["For Month"].isnull()]
+        
         #rename columns based on order
         xls_file[key].rename(
             columns={
@@ -149,21 +150,22 @@ for filename in directory:
             },
             inplace=True,
         )
+        
         # get excel file metadata
         STP_code = xls_file[key]["ODS STP Code"].unique()[0]  # get stp code for all sheets
         STP_name = xls_file[key]["STP Name"].unique()[0]  # get stp name for all sheets
         ICS_name = xls_file[key]["ICS Name (if applicable)"].unique()[0]  # get ics name for all sheets
           
-        #Fill in blanks with zeros. Replace any non numeric entries with zero
+        #For numeric fields, fill in blanks with zeros. Replace any non numeric entries with zero.
         xls_file[key]["Number of users with access to the ShCR"] = pd.to_numeric(xls_file[key]["Number of users with access to the ShCR"], errors='coerce').fillna(0).astype(int)
         xls_file[key]["Number of citizen records available to users via the ShCR"] = pd.to_numeric(xls_file[key]["Number of citizen records available to users via the ShCR"], errors='coerce').fillna(0).astype(int)
         xls_file[key]["Number of ShCR views in the past month"] = pd.to_numeric(xls_file[key]["Number of ShCR views in the past month"], errors='coerce').fillna(0).astype(int)
         xls_file[key]["Number of unique user ShCR views in the past month"] = pd.to_numeric(xls_file[key]["Number of unique user ShCR views in the past month"], errors='coerce').fillna(0).astype(int)
 
-        # append to dataframe
+        # append results to dataframe dataframe
         stp_df = stp_df.append(xls_file[key], ignore_index=True)
 
-    # Trust calculations
+    ### TRUST CALCULATIONS ###
     sheet_name = [sheet for sheet in sheets if sheet.startswith("Trust")]
     xls_file = pd.read_excel(io.BytesIO(file), sheet_name=sheet_name, engine="openpyxl")
     for key in xls_file:
@@ -190,7 +192,7 @@ for filename in directory:
         trust_df = trust_df.append(xls_file[key].iloc[:, 0:9], ignore_index=True)
 
 
-    # PCN calculations
+    ### PCN CALCULATIONS ###
     sheet_name = [sheet for sheet in sheets if sheet.startswith("PCN")]
     xls_file = pd.read_excel(io.BytesIO(file), sheet_name=sheet_name, engine="openpyxl")
     
@@ -219,28 +221,52 @@ for filename in directory:
 
         pcn_df = pcn_df.append(xls_file[key], ignore_index=True)
         
-    # Other calculations
-    # sheet_name = [sheet for sheet in sheets if sheet.startswith('Other')]
-    # xls_file = pd.read_excel(io.BytesIO(file), sheet_name=sheet_name, engine='openpyxl')
-    # for key in xls_file:
-    # xls_file[key].drop(list(xls_file[key].filter(regex = 'Unnamed:')), axis = 1, inplace = True)
-    # xls_file[key] = xls_file[key].loc[~xls_file[key]["For Month"].isnull()]
-    # xls_file[key].rename(columns={list(xls_file[key])[0]:"For Month",
-    #                              list(xls_file[key])[1]:"ODS STP Code",
-    #                              list(xls_file[key])[2]:"ODS PCN Code",
-    #                              list(xls_file[key])[2]:"Other partner",
-    #                              list(xls_file[key])[3]:"Partner Organisation connected to ShCR?",
-    #                              list(xls_file[key])[4]:"Partner Organisation plans to be connected by Sept 2021?",
-    #                              list(xls_file[key])[5]:"Partner Organisation's primary clinical system connect directly to the ShCR?"},inplace=True)
-    # xls_file[key].drop('ODS STP Code', axis=1, inplace=True)
-    # ls_file[key].insert(1, "ODS STP Code", STP_code, False)
-    # xls_file[key].insert(2, "STP Name", STP_name, False)
-    # xls_file[key].insert(3, "ICS Name (if applicable)", ICS_name, False)
-    # print(list(xls_file[key]))
-    # other_df = other_df.append(xls_file[key], ignore_index=True)
+#     Other calculations
+#     sheet_name = [sheet for sheet in sheets if sheet.startswith('Other')]
+#     xls_file = pd.read_excel(io.BytesIO(file), sheet_name=sheet_name, engine='openpyxl')
+#     for key in xls_file:
+#     xls_file[key].drop(list(xls_file[key].filter(regex = 'Unnamed:')), axis = 1, inplace = True)
+#     xls_file[key] = xls_file[key].loc[~xls_file[key]["For Month"].isnull()]
+#     xls_file[key].rename(columns={list(xls_file[key])[0]:"For Month",
+#                                  list(xls_file[key])[1]:"ODS STP Code",
+#                                  list(xls_file[key])[2]:"ODS PCN Code",
+#                                  list(xls_file[key])[2]:"Other partner",
+#                                  list(xls_file[key])[3]:"Partner Organisation connected to ShCR?",
+#                                  list(xls_file[key])[4]:"Partner Organisation plans to be connected by Sept 2021?",
+#                                  list(xls_file[key])[5]:"Partner Organisation's primary clinical system connect directly to the ShCR?"},inplace=True)
+#     xls_file[key].drop('ODS STP Code', axis=1, inplace=True)
+#     ls_file[key].insert(1, "ODS STP Code", STP_code, False)
+#     xls_file[key].insert(2, "STP Name", STP_name, False)
+#     xls_file[key].insert(3, "ICS Name (if applicable)", ICS_name, False)
+#     print(list(xls_file[key]))
+#     other_df = other_df.append(xls_file[key], ignore_index=True)
     
-#find a better way to do this bit  - removes the details, comments and " " columns that were appearing 
-pcn_df = pcn_df.iloc[:,0:9]
+#Remove any non-required columns from final output
+pcn_df = pcn_df[['For Month', 'ODS STP Code', 'STP Name', 'ICS Name (if applicable)', 'ODS PCN Code', 'PCN Name', 'Partner Organisation connected to ShCR?', 'Partner Organisation plans to be connected by Sept 2021?', 'Partner Organisation primary clinical system connect directly to the ShCR?']]
+
+trust_df = trust_df[['For Month', 'ODS STP Code', 'STP Name', 'ICS Name (if applicable)', 'ODS Trust Code', 'Trust Name', 'Partner Organisation connected to ShCR?', 'Partner Organisation plans to be connected by Sept 2021?', 'Partner Organisation primary clinical system connect directly to the ShCR?']]
+
+stp_df= stp_df[['For Month', 'ODS STP Code', 'STP Name', 'ICS Name (if applicable)', 'ShCR Programme Name', 'Name of ShCR System', 'Number of users with access to the ShCR', 'Number of citizen records available to users via the ShCR', 'Number of ShCR views in the past month', 'Number of unique user ShCR views in the past month', 'Completed by (email)', 'Date completed']]
+
+# COMMAND ----------
+
+### check for duplicates
+# import collections
+# a = [item for item, count in collections.Counter(trust_df['ODS Trust Code']).items() if count > 1]
+# trust_df[trust_df['ODS Trust Code'].isin(a)].sort_values(by='ODS Trust Code')
+
+# #a = [item for item, count in collections.Counter(pcn_df['ODS PCN Code']).items() if count > 1]
+# #pcn_df[pcn_df['ODS PCN Code'].isin(a)].sort_values(by='ODS Trust Code')
+
+
+# COMMAND ----------
+
+#cast all date fields to datetime format and set to 1st of the month
+dt =lambda dt: dt.replace(day=1)
+
+pcn_df['For Month'] = pd.to_datetime(pcn_df['For Month']).apply(dt)
+stp_df['For Month'] = pd.to_datetime(stp_df['For Month']).apply(dt)
+trust_df['For Month'] = pd.to_datetime(trust_df['For Month']).apply(dt)
 
 # COMMAND ----------
 
