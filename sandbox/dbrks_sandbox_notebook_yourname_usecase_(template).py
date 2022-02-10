@@ -54,21 +54,41 @@ CONNECTION_STRING = dbutils.secrets.get(scope="datalakefs", key="CONNECTION_STRI
 # COMMAND ----------
 
 # Source Path and File, Source Path and File, Datalake Container
-# -------------------------------------------------------------------------
+# ---------------------------------------------------------------
+
+# Do not change
+# ---------------------------------------------------------------
 file_system = 'nhsxdatalakesagen2fsprod'
-source_path = 'test/source_data/martina_fonseca/data_description/'
+
+# Change to point to the path of your data 
+# ---------------------------------------------------------------
+source_path = 'test/source_data/firstname_lastname/data_description/'
 source_file = 'test.csv'
-sink_path = 'test/sink_data/martina_fonseca/data_description/'
+sink_path = 'test/sink_data/firstname_lastname/data_description/'
 sink_file = 'test.csv'
 
 # COMMAND ----------
 
-# Processing
+# Data ingestion
 # -------------------------------------------------------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
-df = pd.read_csv(io.BytesIO(file)) # ------ change depending on file type
-df_processed = df.copy()
+df = pd.read_csv(io.BytesIO(file)) # ------ change depending on file type for:
+                                   # ------ excel file: pd.read_excel(io.BytesIO(file), sheet_name = 'name_of_sheet', engine  = 'openpyxl') 
+                                   # ------ parquet file: pd.read_parquet(io.BytesIO(file), engine="pyarrow")
+
+# COMMAND ----------
+
+# Data Processing
+# -------------------------------------------------------------------------
+
+df
+
+# COMMAND ----------
+
+# Copy your final dataframe as renamed dataframe called 'df_processed'
+# -------------------------------------------------------------------------
+df_processed = df.copy() #------ replace 'df' with the name of your final 'df' i.e 'df_final' or 'df_7'
 
 # COMMAND ----------
 
