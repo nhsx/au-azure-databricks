@@ -8,12 +8,12 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_sandbox_notebook_yourname_usecase_(template).py
+FILE:           dbrks_sandbox_notebook_sarahr_tocnumerator.py
 DESCRIPTION:
                 Databricks notebook to use as a sandbox for code development by analysts
 USAGE:
                 ...
-CONTRIBUTORS:   Matia Ficarelli
+CONTRIBUTORS:   Sarah
 CONTACT:        data@nhsx.nhs.uk
 CREATED:        10 Feb 2022
 VERSION:        0.0.1
@@ -62,10 +62,10 @@ file_system = 'nhsxdatalakesagen2fsprod'
 
 # Change to point to the path of your data 
 # ---------------------------------------------------------------
-source_path = 'test/source_data/firstname_lastname/data_description/'
-source_file = 'test.csv'
-sink_path = 'test/sink_data/firstname_lastname/data_description/'
-sink_file = 'test.csv'
+source_path = 'test/source_data/sarah_robertson/tocnumerator/'
+source_file = 'toc_numerator.csv'
+sink_path = 'test/sink_data/sarah_robertson/tocnumerator/'
+sink_file = 'procesed.csv'
 
 # COMMAND ----------
 
