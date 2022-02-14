@@ -13,10 +13,10 @@ DESCRIPTION:
                 Databricks notebook with processing code for the NHSX Analyticus unit metric: M077A: No. and % of GP practices that exceed the DSPT standard (yearly historical)
 USAGE:
                 ...
-CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli, Muhammad-Faaiz Shanawas
+CONTRIBUTORS:   Mattia Ficarelli, Muhammad-Faaiz Shanawas, Martina Fonesca
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        20 Jan. 2021
-VERSION:        0.0.1
+CREATED:        14 Feb. 2021
+VERSION:        0.0.2
 """
 
 # COMMAND ----------
@@ -66,12 +66,14 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 file_system = config_JSON['pipeline']['adl_file_system']
 source_path = config_JSON['pipeline']['project']['source_path']
 source_file = config_JSON['pipeline']['project']['source_file']
+reference_source_path = config_JSON['pipeline']['project']['reference_source_path']
+reference_source_file = config_JSON['pipeline']['project']['reference_source_file']
 sink_path = config_JSON['pipeline']['project']['databricks'][1]['sink_path']
 sink_file = config_JSON['pipeline']['project']['databricks'][1]['sink_file']
 
 # COMMAND ----------
 
-# Processing
+# Ingestion and processing of numerator (DSPT status of GP practices)
 # -------------------------------------------------------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
@@ -82,16 +84,33 @@ df["Status_Raw"] = df["Status_Raw"].str.upper()
 df["Status_Raw"] = df["Status_Raw"].replace({'STANDARDS MET (19-20)':'STANDARDS MET','NONE': 'NOT PUBLISHED'})
 df.loc[(df["DSPT_Edition"]=='2018/2019') & (df["Status_Raw"]== 'STANDARDS MET'), "Status_Raw"] = '18/19 STANDARDS MET'
 df.loc[(df["DSPT_Edition"]=='2018/2019') & (df["Status_Raw"]== 'STANDARDS EXCEEDED'), "Status_Raw"] = '18/19 STANDARDS EXCEEDED'
+
+# COMMAND ----------
+
+# Ingestion and joining to reference deomintator data (NHS Digital: Number of registered GP Practices)
+# ---------------------------------------------------------------------------------------------------
+latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, reference_source_path)
+file = datalake_download(CONNECTION_STRING, file_system, reference_source_path+latestFolder, reference_source_file)
+df_ref = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
+
+# Processing - merge denominator ("ground-truth for practices") and numerator ("DSPT status"). Left join (anything not found in denominator dropped.)
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
+df_join = df_ref.merge(df,'left',left_on=['PRACTICE_CODE','FY'],right_on=['Code','DSPT_Edition'])
+
+# COMMAND ----------
+
+# Processing for joined tables
+# -------------------------------------------------------------------------
 def exceed_dspt(c):
   if c['Status_Raw'] == c['Edition flag']:
     return 1
   else:
     return 0
-df['Number of GP practices that exceed the DSPT standard (historical)'] = df.apply(exceed_dspt, axis=1)
-df.rename(columns={"Code":"Practice code", "DSPT_Edition":"Financial year", "Snapshot_Date": "Date"}, inplace = True)
-df1 = df.drop(["Organisation_Name", "Status_Raw", "Edition flag"], axis = 1)
-df1.index.name = "Unique ID"
-df_processed = df1.copy()
+df_join['Number of GP practices that exceed the DSPT standard (historical)'] = df_join.apply(exceed_dspt, axis=1)
+df_join.rename(columns={"Code":"Practice code", "DSPT_Edition":"Financial year", "Snapshot_Date": "Date"}, inplace = True)
+df_join = df_join.drop(["Organisation_Name", "Status_Raw", "Edition flag", "PRACTICE_NAME", "EXTRACT_DATE", "PRACTICE_CODE", "FY"], axis = 1)
+df_join.index.name = "Unique ID"
+df_processed = df_join.copy()
 
 # COMMAND ----------
 
