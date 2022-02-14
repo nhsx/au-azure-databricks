@@ -80,12 +80,6 @@ latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 df["Snapshot_Date"] = pd.to_datetime(df["Snapshot_Date"])
-df["Edition flag_1"] = df["DSPT_Edition"].str[2:4] + "/" + df["DSPT_Edition"].str[7:] + " STANDARDS EXCEEDED"
-df["Edition flag_2"] = df["DSPT_Edition"].str[2:4] + "/" + df["DSPT_Edition"].str[7:] + " STANDARDS MET"
-df["Status_Raw"] = df["Status_Raw"].str.upper()
-df["Status_Raw"] = df["Status_Raw"].replace({'STANDARDS MET (19-20)':'STANDARDS MET','NONE': 'NOT PUBLISHED'})
-df.loc[(df["DSPT_Edition"]=='2018/2019') & (df["Status_Raw"]== 'STANDARDS MET'), "Status_Raw"] = '18/19 STANDARDS MET'
-df.loc[(df["DSPT_Edition"]=='2018/2019') & (df["Status_Raw"]== 'STANDARDS EXCEEDED'), "Status_Raw"] = '18/19 STANDARDS EXCEEDED'
 
 # COMMAND ----------
 
@@ -103,6 +97,12 @@ df_join = df_ref.merge(df,'left',left_on=['PRACTICE_CODE','FY'],right_on=['Code'
 
 # Processing for joined tables
 # -------------------------------------------------------------------------
+df_join["Edition flag_1"] = df_join["DSPT_Edition"].str[2:4] + "/" + df_join["DSPT_Edition"].str[7:] + " STANDARDS EXCEEDED"
+df_join["Edition flag_2"] = df_join["DSPT_Edition"].str[2:4] + "/" + df_join["DSPT_Edition"].str[7:] + " STANDARDS MET"
+df_join["Status_Raw"] = df_join["Status_Raw"].str.upper()
+df_join["Status_Raw"] = df_join["Status_Raw"].replace({'STANDARDS MET (19-20)':'STANDARDS MET','NONE': 'NOT PUBLISHED'})
+df_join.loc[(df_join["DSPT_Edition"]=='2018/2019') & (df_join["Status_Raw"]== 'STANDARDS MET'), "Status_Raw"] = '18/19 STANDARDS MET'
+df_join.loc[(df_join["DSPT_Edition"]=='2018/2019') & (df_join["Status_Raw"]== 'STANDARDS EXCEEDED'), "Status_Raw"] = '18/19 STANDARDS EXCEEDED'
 def exceed_dspt(c):
   if c['Status_Raw'] == c['Edition flag_1']:
     return 1
@@ -116,9 +116,9 @@ def met_dspt(c):
 df_join['Number of GP practices that exceed the DSPT standard (historical)'] = df_join.apply(exceed_dspt, axis=1)
 df_join['Number of GP practices that met the DSPT standard (historical)'] = df_join.apply(met_dspt, axis=1)
 df_join["Number of GP practices that meet or exceed the DSPT standard (historical)"] = df_join['Number of GP practices that exceed the DSPT standard (historical)'] + df_join['Number of GP practices that met the DSPT standard (historical)']
-df_join.rename(columns={"Code":"Practice code", "DSPT_Edition":"Financial year", "Snapshot_Date": "Date"}, inplace = True)
+df_join.rename(columns={"PRACTICE_CODE":"Practice code", "FY":"Financial year", "EXTRACT_DATE": "Date"}, inplace = True)
 df_join_1 = df_join.drop(["Organisation_Name", "Status_Raw", "Edition flag_1", "Edition flag_2", "Number of GP practices that exceed the DSPT standard (historical)", 
-               "Number of GP practices that met the DSPT standard (historical)","PRACTICE_NAME", "EXTRACT_DATE", "PRACTICE_CODE", "FY"], axis = 1)
+               "Number of GP practices that met the DSPT standard (historical)","PRACTICE_NAME", "Snapshot_Date","DSPT_Edition", "Code"], axis = 1)
 df_join_1.index.name = "Unique ID"
 df_processed = df_join_1.copy()
 
