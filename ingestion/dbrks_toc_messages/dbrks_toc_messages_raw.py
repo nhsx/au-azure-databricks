@@ -8,13 +8,13 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_gp_eps_results_raw.py
+FILE:           dbrks_toc_messages_raw.py
 DESCRIPTION:
                 Databricks notebook with code to append new raw data to historical
-                data for the NHSX Analyticus unit metrics within the topic Transfer of Care (TOC) messages
+                data for the NHSX Analytics unit metrics within the topic Transfer of Care (TOC) messages
 USAGE:
                 ...
-CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli
+CONTRIBUTORS:   Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
 CREATED:        04 Oct. 2021
 VERSION:        0.0.1
