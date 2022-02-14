@@ -8,7 +8,7 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_sandbox_notebook_1.py
+FILE:           dbrks_sandbox_notebook_yourname_usecase_(template).py
 DESCRIPTION:
                 Databricks notebook to use as a sandbox for code development by analysts
 USAGE:
@@ -23,7 +23,7 @@ VERSION:        0.0.1
 
 # Install libs
 # -------------------------------------------------------------------------
-%pip install geojson==2.5.* tabulate requests pandas pathlib azure-storage-file-datalake beautifulsoup4 numpy urllib3 lxml regex pyarrow==5.0.*
+%pip install geojson==2.5.* tabulate requests pandas pathlib azure-storage-file-datalake beautifulsoup4 numpy urllib3 lxml regex pyarrow==5.0.* 
 
 # COMMAND ----------
 
@@ -42,7 +42,7 @@ import numpy as np
 from pathlib import Path
 from azure.storage.filedatalake import DataLakeServiceClient
 
-# Connect to Azure datalake
+# Connect to Azure datalake - do not change
 # -------------------------------------------------------------------------
 # !env from databricks secrets
 CONNECTION_STRING = dbutils.secrets.get(scope="datalakefs", key="CONNECTION_STRING")
