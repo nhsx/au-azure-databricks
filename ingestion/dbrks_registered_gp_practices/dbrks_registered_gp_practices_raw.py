@@ -101,7 +101,7 @@ def fy(entry):
 
 #Data processing
 #----------------------------------------------------------
-new_dataframe['EXTRACT_DATE'] = pd.to_datetime(new_dataframe['EXTRACT_DATE'])
+new_dataframe['EXTRACT_DATE'] = pd.to_datetime(new_dataframe['EXTRACT_DATE']) 
 new_dataframe['FY'] = new_dataframe.apply(fy,axis=1) #----- Apply FY function to dataframe
 col_keep = ['PRACTICE_CODE','PRACTICE_NAME','EXTRACT_DATE','FY']
 new_dataframe = new_dataframe[col_keep]
@@ -120,7 +120,7 @@ historical_dataframe = pd.read_parquet(io.BytesIO(historical_dataset), engine="p
 fy_editions_in_historical = historical_dataframe["FY"].unique().tolist()
 fy_edition_in_new = new_dataframe["FY"].unique().tolist()[0]
 if fy_edition_in_new in fy_editions_in_historical:
-  print('New ata already exists in historical data')
+  print('New data already exists in historical data')
 else:
   historical_dataframe = historical_dataframe.append(new_dataframe)
   historical_dataframe = historical_dataframe.sort_values(by=['FY'])

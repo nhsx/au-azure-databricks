@@ -78,11 +78,6 @@ sink_file = config_JSON['pipeline']['project']['databricks'][2]['sink_file']
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
-df["Snapshot_Date"] = pd.to_datetime(df["Snapshot_Date"])
-df["Status_Raw"] = df["Status_Raw"].str.upper()
-df["Status_Raw"] = df["Status_Raw"].replace({'STANDARDS MET (19-20)':'STANDARDS MET','NONE': 'NOT PUBLISHED'})
-df.loc[(df["DSPT_Edition"]=='2018/2019') & (df["Status_Raw"]== 'STANDARDS MET'), "Status_Raw"] = '18/19 STANDARDS MET'
-df.loc[(df["DSPT_Edition"]=='2018/2019') & (df["Status_Raw"]== 'STANDARDS EXCEEDED'), "Status_Raw"] = '18/19 STANDARDS EXCEEDED'
 
 # COMMAND ----------
 
@@ -100,6 +95,11 @@ df_join = df_ref.merge(df,'left',left_on=['PRACTICE_CODE','FY'],right_on=['Code'
 
 # Processing for joined tables
 # -------------------------------------------------------------------------
+df_join["Snapshot_Date"] = pd.to_datetime(df["Snapshot_Date"])
+df_join["Status_Raw"] = df_join["Status_Raw"].str.upper()
+df_join["Status_Raw"] = df_join["Status_Raw"].replace({'STANDARDS MET (19-20)':'STANDARDS MET','NONE': 'NOT PUBLISHED'})
+df_join.loc[(df_join["DSPT_Edition"]=='2018/2019') & (df_join["Status_Raw"]== 'STANDARDS MET'), "Status_Raw"] = '18/19 STANDARDS MET'
+df_join.loc[(df_join["DSPT_Edition"]=='2018/2019') & (df_join["Status_Raw"]== 'STANDARDS EXCEEDED'), "Status_Raw"] = '18/19 STANDARDS EXCEEDED'
 def dspt_not_published(c):
   if c['Status_Raw'] == 'NOT PUBLISHED':
     return 1
@@ -107,8 +107,8 @@ def dspt_not_published(c):
     return 0 
 df_join['Status_Raw'] = df_join['Status_Raw'].fillna('NOT PUBLISHED')
 df_join['Number of GP practices that have not submitted a DSPT assessment (historical)'] = df_join.apply(dspt_not_published, axis=1)
-df_join.rename(columns={"Code":"Practice code", "DSPT_Edition":"Financial year", "Snapshot_Date": "Date"}, inplace = True)
-df_join_1 = df_join.drop(["Organisation_Name", "Status_Raw","PRACTICE_CODE", "PRACTICE_NAME", "EXTRACT_DATE", "FY"], axis = 1)
+df_join.rename(columns={"PRACTICE_CODE":"Practice code", "FY":"Financial year", "EXTRACT_DATE": "Date"}, inplace = True)
+df_join_1 = df_join.drop(["Organisation_Name", "Status_Raw", "Code", "PRACTICE_NAME", "Snapshot_Date", "DSPT_Edition"], axis = 1)
 df_join_1.index.name = "Unique ID"
 df_processed = df_join_1.copy()
 
