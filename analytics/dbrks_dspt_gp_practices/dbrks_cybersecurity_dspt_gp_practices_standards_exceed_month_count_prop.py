@@ -106,7 +106,7 @@ def exceed_dspt(c):
       return 1
     else:
       return 0
-df_join['Number of GP practices that exceed the DSPT standard (monthly snapshot)'] = df_join.apply(exceed_dspt, axis=1)
+df_join['Number of GP practices that exceed the DSPT standard (snapshot)'] = df_join.apply(exceed_dspt, axis=1)
 df_join.rename(columns={"PRACTICE_CODE":"Practice code", "FY":"Financial year"}, inplace = True)
 df_join = df_join.drop(["Code", "Latest Status", "EXTRACT_DATE", "PRACTICE_NAME"], axis = 1)
 df_join.insert(1,'Date', datetime.now().strftime('%Y-%m-%d'))
