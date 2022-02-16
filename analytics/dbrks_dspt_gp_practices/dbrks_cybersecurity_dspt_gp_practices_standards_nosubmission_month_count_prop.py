@@ -8,7 +8,7 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_cybersecurity_dspt_gp_practices_standards_exceed_month_count_prop.py
+FILE:           dbrks_cybersecurity_dspt_gp_practices_standards_nosubmission_month_count_prop.py
 DESCRIPTION:
                 Databricks notebook with processing code for the NHSX Analyticus unit metric: M078B: No. and % of GP practices that have not submitted DSPT assessment (monthly snapshot)
 USAGE:
