@@ -119,10 +119,6 @@ df_processed = df5.copy()
 
 # COMMAND ----------
 
-df_processed
-
-# COMMAND ----------
-
 #Upload processed data to datalake
 file_contents = io.StringIO()
 df_processed.to_csv(file_contents)
