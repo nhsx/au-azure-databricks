@@ -6,14 +6,14 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:          dbrks_podac_pharmacy_it_capacity_month_count.py
+FILE:           dbrks_odscodes_trust_mapping.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analytics unit metric: Increase in capacity of Pharmacy IT systems to enable pharmacists to provide consultation services to patients (no.) (PODAC) (M019)
+                Databricks notebook with processing code for the reference table which maps Trusts to ICBs and NHS Regions for NHSX Analytics Unit dashboard projects
 USAGE:
                 ...
-CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli, Everistus Oputa
+CONTRIBUTORS:   Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        02 Dec 2021
+CREATED:        24 Feb. 2022
 VERSION:        0.0.1
 """
 
@@ -53,8 +53,8 @@ CONNECTION_STRING = dbutils.secrets.get(scope="datalakefs", key="CONNECTION_STRI
 
 # Load JSON config from Azure datalake
 # -------------------------------------------------------------------------
-file_path_config = "/config/pipelines/nhsx-au-analytics/"
-file_name_config = "config_pharmacy_assurance_dbrks.json"
+file_path_config = "/config/pipelines/reference_tables/"
+file_name_config = "config_odscodes_trust.json"
 file_system_config = "nhsxdatalakesagen2fsprod"
 config_JSON = datalake_download(CONNECTION_STRING, file_system_config, file_path_config, file_name_config)
 config_JSON = json.loads(io.BytesIO(config_JSON).read())
@@ -75,18 +75,17 @@ sink_file = config_JSON['pipeline']['project']['sink_file']
 # -------------------------------------------------------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
-df = pd.read_csv(io.BytesIO(file))
-df1 = df[~df["CPCS type"].isin(["Minor Illness Referral Consultation"])]
-df1["System Assured"] = df1["System Assured"].replace("True", 1).replace("False", 0)
-df2 = df1.groupby("Date").agg({"System Assured": "sum", "CPCS type":"count"}).reset_index()
-df3 = df2.rename(columns  = {"System Assured": "Number of pharmacies with a assured IT system status", "CPCS type": "Number of pharmacies"})
-df3.index.name = "Unique ID"
-df_processed = df3.copy()
+df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
+df_1 = df[["Organisation_Code", "Organisation_Name", "Region_Code", "Region_Name", "STP_Code", "STP_Name", "Effective_To"]]
+df_1["Effective_To"] = pd.to_datetime(df_1["Effective_To"])
+df_2 = df_1[~df_1['Organisation_Code'].isna()]
+df_3 = df_2[df_2['Effective_To'].isna()].reset_index(drop = True).drop("Effective_To", axis = 1)
+df_processed = df_3.copy()
 
 # COMMAND ----------
 
 # Upload processed data to datalake
 # -------------------------------------------------------------------------
-file_contents = io.StringIO()
-df_processed.to_csv(file_contents)
+file_contents = io.BytesIO()
+df_processed.to_parquet(file_contents, engine="pyarrow")
 datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+latestFolder, sink_file)
