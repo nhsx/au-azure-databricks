@@ -63,22 +63,63 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 # COMMAND ----------
 
 #Get parameters from JSON config
+file_system = config_JSON['pipeline']['adl_file_system']
 source_path = config_JSON['pipeline']['project']['source_path']
 source_file = config_JSON['pipeline']['project']['source_file']
-file_system = config_JSON['pipeline']['sink_adl_file_system']
+reference_source_path = config_JSON['pipeline']['project']['reference_source_path']
+reference_source_file = config_JSON['pipeline']['project']['reference_source_file']
 sink_path = config_JSON['pipeline']['project']['databricks'][0]['sink_path']
 sink_file = config_JSON['pipeline']['project']['databricks'][0]['sink_file']  
 
 # COMMAND ----------
 
-#Processing
+# Ingestion of numerator data (NHS app performance data)
+# ---------------------------------------------------------------------------------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
-df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")df
+df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
+
+# Ingestion of reference deomintator data (ONS: age banded population data)
+# ---------------------------------------------------------------------------------------------------
+ref_latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, reference_source_path)
+file = datalake_download(CONNECTION_STRING, file_system, reference_source_path+ref_latestFolder, reference_source_file)
+df_ref = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 
 # COMMAND ----------
 
+#Processing
+# ---------------------------------------------------------------------------------------------------
 
+#Numerator
+# ---------------------------------------------------------------------------------------------------
+df['Date'] = pd.to_datetime(df['Date'], infer_datetime_format=True)  
+df.rename(columns = {'AcceptedTermsAndConditions':'users'}, inplace = True)
+df2 = df[['Date','users']].copy()
+df2['users'] = pd.to_numeric(df2['users'],errors='coerce').fillna(0)
+df2 = df2.groupby('Date').sum().resample('W').sum()
+df2.iloc[0,:]['users'] += 1050398 #--------- adjustment for missing history
+df2['total_users'] = df2['users'].cumsum() #--------- add cumulative sum column
+
+#Denominator porcessing
+# ---------------------------------------------------------------------------------------------------
+df_ref.loc[df_ref['Age'] == "90+", 'Age'] = 90
+df_ref['Age'] = df_ref['Age'].astype('int32')
+df_ref_latest_adult = df_ref[(df_ref['Effective_Snapshot_Date'] == df_ref['Effective_Snapshot_Date'].max()) & ((df_ref['Age'] >17))]
+denominator = df_ref_latest_adult['Size'].sum()
+
+#Joint processing 
+# ---------------------------------------------------------------------------------------------------
+df3 = df2.reset_index()
+df3['Adult population'] = denominator
+df3['Percentage of adult population with an NHS App registration'] = df3['total_users']/denominator
+df4 = df3.drop(['users'], axis=1).rename(columns = {'total_users': 'Number of users with an NHS App registration'})
+df5 = df4.round(4)
+df5.index.name = "Unique ID"
+df_processed = df5.copy()
+
+# COMMAND ----------
+
+df_processed
 
 # COMMAND ----------
 
