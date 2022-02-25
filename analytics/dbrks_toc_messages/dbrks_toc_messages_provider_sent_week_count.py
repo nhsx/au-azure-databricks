@@ -10,7 +10,7 @@
 """
 FILE:           dbrks_toc_messages_provider_sent_week_count.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric: No. transfer of care digital messages sent to GPs (all use cases) (M030A.1)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric: No. transfer of care digital messages sent to GPs at a NHS Trust level (all use cases) (M030A.1)
 USAGE:
                 ...
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli
