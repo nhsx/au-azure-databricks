@@ -93,10 +93,12 @@ df_ref = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 #Numerator
 # ---------------------------------------------------------------------------------------------------
 df['Date'] = pd.to_datetime(df['Date'], infer_datetime_format=True)  
+print(df['Date'].max())
 df.rename(columns = {'AcceptedTermsAndConditions':'users'}, inplace = True)
 df2 = df[['Date','users']].copy()
 df2['users'] = pd.to_numeric(df2['users'],errors='coerce').fillna(0)
 df2 = df2.groupby('Date').sum().resample('W').sum()
+df2.drop(df2[df2['users'] == 0].index,inplace=True) #--------- remove columns with 0
 df2.iloc[0,:]['users'] += 1050398 #--------- adjustment for missing history
 df2['total_users'] = df2['users'].cumsum() #--------- add cumulative sum column
 
