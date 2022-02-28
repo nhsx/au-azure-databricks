@@ -92,9 +92,9 @@ df4 = df3.rename(columns = {'_time': 'Date',
                             'TOC_FHIR_OP_ATTEN_ACK': 'Number of successful FHIR ToC outpatient clinic attendance messages'})
 df4['Trust code'] = df4['Trust code'].str[:3] #------ Only retain the first three characters of the NHS Trust Site ODS code, to equate it to the NHS Trust ODS code
 df4.columns.name = None
-df4.index.name = "Unique ID"
 if df4['Date'].iloc[-1] == datetime.now().strftime("%Y-%m"):
-  df4.drop(df4.tail(1).index,inplace=True)
+  df4 = df4[(df4['Date'] < datetime.now().strftime("%Y-%m"))]
+df4.index.name = "Unique ID"
 df_processed = df4.copy()
 
 # COMMAND ----------
