@@ -105,7 +105,6 @@ df_join_1['Acute admitted patient care FHIR ToC utilisation (per 1,000 discharge
 df_join_2 = df_join_1.round(2)
 df_join_2.index.name = "Unique ID"
 df_processed = df_join_2.copy()
-df_processed
 
 # COMMAND ----------
 
