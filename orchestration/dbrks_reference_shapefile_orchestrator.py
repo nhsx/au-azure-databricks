@@ -75,3 +75,4 @@ for index, item in enumerate(config_JSON['pipeline']['raw']['databricks']): # ge
     dbutils.notebook.run(notebook, 1000) # is 120 sec long enough for timeout?
   except Exception as e:
     print(e)
+    raise Exception()

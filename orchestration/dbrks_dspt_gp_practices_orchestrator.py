@@ -69,3 +69,4 @@ for index, item in enumerate(config_JSON['pipeline']['project']['databricks']): 
     dbutils.notebook.run(notebook, 1000) #1000 sec timeout
   except Exception as e:
     print(e)
+    raise Exception()
