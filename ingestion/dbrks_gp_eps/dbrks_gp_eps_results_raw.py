@@ -88,6 +88,7 @@ soup = BeautifulSoup(response.read(), "lxml")
 data = soup.select_one("a[href*='erd-data']")
 csv_url = 'https:' +  data['href']
 eps_df_snapshot = pd.read_csv(csv_url)
+eps_df_snapshot = eps_df_snapshot.rename(columns = {'% of patients with a nomination': '% with nominated pharm'})
 
 #Extract date from csv URL
 date_from_csv = csv_url.partition("erd-data-")[2].partition(".csv")[0].title()
@@ -119,6 +120,7 @@ if date_from_csv_final not in historical_dataframe.values:
   historical_dataframe.index.name = "Unique ID"
 else:
   print("data already exists")
+
 
 # COMMAND ----------
 
