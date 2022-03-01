@@ -50,7 +50,7 @@ CONNECTION_STRING = dbutils.secrets.get(scope="datalakefs", key="CONNECTION_STRI
 
 # COMMAND ----------
 
-# MAGIC %run /Repos/dev/au-azure-databricks/functions/dbrks_helper_functions
+# MAGIC %run /Repos/prod/au-azure-databricks/functions/dbrks_helper_functions
 
 # COMMAND ----------
 

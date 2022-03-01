@@ -54,7 +54,7 @@ CONNECTION_STRING = dbutils.secrets.get(scope="datalakefs", key="CONNECTION_STRI
 
 # COMMAND ----------
 
-# MAGIC %run /Repos/dev/au-azure-databricks/functions/dbrks_helper_functions
+# MAGIC %run /Repos/prod/au-azure-databricks/functions/dbrks_helper_functions
 
 # COMMAND ----------
 
@@ -75,3 +75,4 @@ for index, item in enumerate(config_JSON['pipeline']['project_databricks']['data
     dbutils.notebook.run(notebook, 1000) # is 120 sec long enough for timeout?
   except Exception as e:
     print(e)
+    raise Exception()
