@@ -86,8 +86,9 @@ file_name_list = datalake_listContents(CONNECTION_STRING, file_system, new_sourc
 file_name_list = [file for file in file_name_list if '.xlsx' in file]
 for new_source_file in file_name_list:
   new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path+latestFolder, new_source_file)
-  new_dataframe = pd.read_excel(io.BytesIO(new_dataset), sheet_name = 'NHSX Analytic Unit Data', engine  = 'openpyxl') #------ check this is true when email dataflow starts
-  new_dataframe['Date'] = pd.to_datetime(new_dataframe['Date']).dt.strftime('%Y-%m-%d')
+  new_dataframe = pd.read_excel(io.BytesIO(new_dataset),  engine  = 'openpyxl') #------ check this is true when email dataflow starts
+  new_dataframe['Date']=  pd.to_datetime(new_dataframe['Date'].str[3:]).dt.strftime('%Y-%m')
+  new_dataframe = new_dataframe.loc[:, ~new_dataframe.columns.str.contains('^Unnamed')]
 
 # COMMAND ----------
 
@@ -96,7 +97,7 @@ for new_source_file in file_name_list:
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, historical_source_path)
 historical_dataset = datalake_download(CONNECTION_STRING, file_system, historical_source_path+latestFolder, historical_source_file)
 historical_dataframe = pd.read_csv(io.BytesIO(historical_dataset))
-historical_dataframe['Date'] = pd.to_datetime(historical_dataframe['Date']).dt.strftime('%Y-%m-%d')
+historical_dataframe['Date'] = pd.to_datetime(historical_dataframe['Date']).dt.strftime('%Y-%m')
 
 # Append new data to historical data
 # -----------------------------------------------------------------------
