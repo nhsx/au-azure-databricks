@@ -100,15 +100,19 @@ df_join["Status_Raw"] = df_join["Status_Raw"].str.upper()
 df_join["Status_Raw"] = df_join["Status_Raw"].replace({'STANDARDS MET (19-20)':'STANDARDS MET','NONE': 'NOT PUBLISHED'})
 df_join.loc[(df_join["DSPT_Edition"]=='2018/2019') & (df_join["Status_Raw"]== 'STANDARDS MET'), "Status_Raw"] = '18/19 STANDARDS MET'
 df_join.loc[(df_join["DSPT_Edition"]=='2018/2019') & (df_join["Status_Raw"]== 'STANDARDS EXCEEDED'), "Status_Raw"] = '18/19 STANDARDS EXCEEDED'
+df_join['Edition Flag'] = df_join['Status_Raw'].str[:5]
+df_join['DSPT_Edition_short'] = df_join["DSPT_Edition"].str[2:4] + "/" + df_join["DSPT_Edition"].str[7:]
 def dspt_not_published(c):
   if c['Status_Raw'] == 'NOT PUBLISHED':
+    return 1
+  elif c['DSPT_Edition_short'] != c['Edition Flag']:
     return 1
   else:
     return 0 
 df_join['Status_Raw'] = df_join['Status_Raw'].fillna('NOT PUBLISHED')
 df_join['Number of GP practices that have not submitted a DSPT assessment (historical)'] = df_join.apply(dspt_not_published, axis=1)
 df_join.rename(columns={"PRACTICE_CODE":"Practice code", "FY":"Financial year", "EXTRACT_DATE": "Date"}, inplace = True)
-df_join_1 = df_join.drop(["Organisation_Name", "Status_Raw", "Code", "PRACTICE_NAME", "Snapshot_Date", "DSPT_Edition"], axis = 1)
+df_join_1 = df_join.drop(["Organisation_Name", "Status_Raw", "Code", "PRACTICE_NAME", "Snapshot_Date", "DSPT_Edition", "Edition Flag", "DSPT_Edition_short"], axis = 1)
 df_join_1.index.name = "Unique ID"
 df_processed = df_join_1.copy()
 
