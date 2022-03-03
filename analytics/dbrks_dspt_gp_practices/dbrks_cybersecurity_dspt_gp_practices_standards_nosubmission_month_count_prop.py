@@ -99,12 +99,15 @@ df_join = df_ref_2.merge(df_1,'left',left_on='PRACTICE_CODE', right_on='Code')
 
 # Processing for joined tables
 # -------------------------------------------------------------------------
-df_join['Latest Status'] = df_join['Latest Status'].fillna('Not Published')
+criteria = ['20/21 Standards Exceeded', '21/22 Standards Exceeded', '20/21 Standards Met', '21/22 Standards Met']  #-------- change this upon closure of the fiancial year. Please see the SOP.
 def exceed_dspt(c):
     if c['Latest Status'] == 'Not Published':
       return 1
+    elif c['Latest Status'] not in criteria:
+      return 1
     else:
       return 0
+df_join['Latest Status'] = df_join['Latest Status'].fillna('Not Published')    
 df_join['Number of GP practices that have not submitted a DSPT assessment (snapshot)'] = df_join.apply(exceed_dspt, axis=1)
 df_join.rename(columns={"PRACTICE_CODE":"Practice code", "FY":"Financial year"}, inplace = True)
 df_join = df_join.drop(["Code", "Latest Status", "EXTRACT_DATE", "PRACTICE_NAME"], axis = 1)
