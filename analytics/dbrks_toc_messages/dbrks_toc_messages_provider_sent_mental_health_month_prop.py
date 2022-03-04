@@ -10,7 +10,7 @@
 """
 FILE:           dbrks_toc_messages_provider_sent_mental_health_month_prop.py
 DESCRIPTION:    Databricks notebook with processing code for the NHSX Analytics
-                unit metric: Mental health FHIR ToC utilisation (per 1,000 discharges) at a NHS Trust level (M030D.1)
+                unit metric: Mental health FHIR ToC utilisation (per 1,000 discharges) at a NHS Trust level (M030D.1).
 
 CONTRIBUTORS:   Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
