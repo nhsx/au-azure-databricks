@@ -6,9 +6,9 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:          dbrks_podac_pharmacy_it_assurance_month_count.py
+FILE:          dbrks_podac_pharmacy_it_capacity_month_count.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analytics unit metric: Number of IT system suppliers assured to enable pharmacists to provide CPCS (M019)
+                Databricks notebook with processing code for the NHSX Analytics unit metric: Increase in capacity of Pharmacy IT systems to enable pharmacists to provide consultation services to patients (no.) (PODAC) (M019)
 USAGE:
                 ...
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli, Everistus Oputa
@@ -76,9 +76,12 @@ sink_file = config_JSON['pipeline']['project']['sink_file']
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_csv(io.BytesIO(file))
-df1 = df[["Date", "Number of IT system suppliers assured to enable pharmacists to provide CPCS", "Number of IT system suppliers"]]
-df1.index.name = "Unique ID"
-df_processed = df1.copy()
+df1 = df[~df["CPCS type"].isin(["Minor Illness Referral Consultation"])]
+df1["System Assured"] = df1["System Assured"].replace("True", 1).replace("False", 0)
+df2 = df1.groupby("Date").agg({"System Assured": "sum", "CPCS type":"count"}).reset_index()
+df3 = df2.rename(columns  = {"System Assured": "Number of pharmacies with a assured IT system status", "CPCS type": "Number of pharmacies"})
+df3.index.name = "Unique ID"
+df_processed = df3.copy()
 
 # COMMAND ----------
 
