@@ -112,10 +112,6 @@ else:
 
 # COMMAND ----------
 
-  historical_dataframe
-
-# COMMAND ----------
-
 # Upload hsitorical appended data to datalake
 current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
 file_contents = io.StringIO()
