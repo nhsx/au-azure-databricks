@@ -8,10 +8,10 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_digitally_supported_care_raw.py
+FILE:           dbrks_pharmacy_assurance_raw.py
 DESCRIPTION:
-                Databricks notebook with code to append new raw data to historical
-                data for the NHSX Analytics unit metrics within the topic of patients recieving digitally supported care at home
+                Databricks notebook with code to append and check new raw data to historical
+                data for the NHSX Analytics unit metrics within the topic of Pharmacy IT assurance
 USAGE:
                 ...
 CONTRIBUTORS:   Mattia Ficarelli
@@ -61,7 +61,7 @@ CONNECTION_STRING = dbutils.secrets.get(scope="datalakefs", key="CONNECTION_STRI
 # Load JSON config from Azure datalake
 # -------------------------------------------------------------------------
 file_path_config = "/config/pipelines/nhsx-au-analytics/"
-file_name_config = "config_digitally_supported_care_dbrks.json"
+file_name_config = "config_pharmacy_assurance_dbrks.json"
 file_system_config = "nhsxdatalakesagen2fsprod"
 config_JSON = datalake_download(CONNECTION_STRING, file_system_config, file_path_config, file_name_config)
 config_JSON = json.loads(io.BytesIO(config_JSON).read())
@@ -71,7 +71,7 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 # Read parameters from JSON config
 # -------------------------------------------------------------------------
 file_system = config_JSON['pipeline']['adl_file_system']
-new_source_path = config_JSON['pipeline']['raw']['snapshot_source_path']
+new_source_path = config_JSON['pipeline']['raw']['source_path']
 historical_source_path = config_JSON['pipeline']['raw']['appended_path']
 historical_source_file = config_JSON['pipeline']['raw']['appended_file']
 sink_path = config_JSON['pipeline']['raw']['appended_path']
@@ -109,6 +109,10 @@ else:
   historical_dataframe = new_dataframe
   historical_dataframe = historical_dataframe.sort_values(by=['Date'])
   historical_dataframe = historical_dataframe.reset_index(drop=True)
+
+# COMMAND ----------
+
+  historical_dataframe
 
 # COMMAND ----------
 
