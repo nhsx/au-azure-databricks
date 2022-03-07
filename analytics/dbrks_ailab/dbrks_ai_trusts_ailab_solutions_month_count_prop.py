@@ -81,7 +81,8 @@ df['Percent of Trusts with at least one NHS AI Lab solution trialled'] = df['Num
 df_1 = df.rename(columns = {'Number of Trusts (England) with at least one NHS AI Lab solution trialled': 'Number of Trusts with at least one NHS AI Lab solution trialled', 
                             "Total number of Trusts (England)": "Total number of Trusts"})
 df_1.index.name = "Unique ID"
-df_processed = df_1.copy()
+df_2 = df_1.round(4)
+df_processed = df_2.copy()
 
 # COMMAND ----------
 
