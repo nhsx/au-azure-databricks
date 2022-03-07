@@ -71,7 +71,7 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 # Read parameters from JSON config
 # -------------------------------------------------------------------------
 file_system = config_JSON['pipeline']['adl_file_system']
-new_source_path = config_JSON['pipeline']['raw']['snapshot_source_path']
+new_source_path = config_JSON['pipeline']['raw']['source_path']
 historical_source_path = config_JSON['pipeline']['raw']['appended_path']
 historical_source_file = config_JSON['pipeline']['raw']['appended_file']
 sink_path = config_JSON['pipeline']['raw']['appended_path']
