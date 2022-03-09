@@ -68,8 +68,8 @@ source_path = config_JSON['pipeline']['project']['source_path']
 source_file = config_JSON['pipeline']['project']['source_file']
 denominator_source_path = config_JSON['pipeline']['project']['M30B_denominator_source_path']
 denominator_source_file = config_JSON['pipeline']['project']['M30B_denominator_source_file']
-sink_path = config_JSON['pipeline']['project']['databricks'][4]['sink_path']
-sink_file = config_JSON['pipeline']['project']['databricks'][4]['sink_file']  
+sink_path = config_JSON['pipeline']['project']['databricks'][3]['sink_path']
+sink_file = config_JSON['pipeline']['project']['databricks'][3]['sink_file']  
 
 # COMMAND ----------
 

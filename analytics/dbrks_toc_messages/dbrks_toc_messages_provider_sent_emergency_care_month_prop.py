@@ -8,13 +8,13 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_toc_messages_provider_sent_mental_health_month_prop.py
+FILE:           dbrks_toc_messages_provider_sent_emergency_care_month_prop.py
 DESCRIPTION:    Databricks notebook with processing code for the NHSX Analytics
-                unit metric: Mental health FHIR ToC utilisation (per 1,000 discharges) at a NHS Trust level (M030D.1).
+                unit metric: Emergency care FHIR ToC utilisation (per 1,000 discharges) at a NHS Trust level (M030C.1)
 
 CONTRIBUTORS:   Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        04 Mar. 2022
+CREATED:        09 Mar. 2022
 VERSION:        0.0.2
 """
 
@@ -66,10 +66,10 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 file_system = config_JSON['pipeline']['adl_file_system']
 source_path = config_JSON['pipeline']['project']['source_path']
 source_file = config_JSON['pipeline']['project']['source_file']
-denominator_source_path = config_JSON['pipeline']['project']['M30D_denominator_source_path']
-denominator_source_file = config_JSON['pipeline']['project']['M30D_denominator_source_file']
-sink_path = config_JSON['pipeline']['project']['databricks'][5]['sink_path']
-sink_file = config_JSON['pipeline']['project']['databricks'][5]['sink_file']  
+denominator_source_path = config_JSON['pipeline']['project']['M30C_denominator_source_path']
+denominator_source_file = config_JSON['pipeline']['project']['M30C_denominator_source_file']
+sink_path = config_JSON['pipeline']['project']['databricks'][4]['sink_path']
+sink_file = config_JSON['pipeline']['project']['databricks'][4]['sink_file']  
 
 # COMMAND ----------
 
@@ -80,34 +80,32 @@ latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 df1 = df[['_time', 'workflow','recipientOdsCode']]
-df1 = df1[df1['workflow'].str.contains('TOC_FHIR_MH_DISCH_ACK')].reset_index(drop = True)
+df1 = df1[df1['workflow'].str.contains('TOC_FHIR_EC_DISCH_ACK')].reset_index(drop = True)
 df1['Count'] = 1
-df1['_time'] = pd.to_datetime(df1['_time']).dt.strftime("%Y-%m")
+df1['_time'] = pd.to_datetime(df1['_time']).dt.strftime("%Y-%m-%d")
 df2 = df1.groupby(['_time', 'workflow', 'recipientOdsCode']).sum().reset_index()
 df2['Count'] = df2['Count'].div(2).apply(np.floor)
 df3 = df2.set_index(['_time','recipientOdsCode','workflow']).unstack()['Count'].reset_index().fillna(0)
-df4 = df3.rename(columns = {"TOC_FHIR_MH_DISCH_ACK": "Number of successful FHIR ToC mental health discharge messages" })
+df4 = df3.rename(columns = {"TOC_FHIR_EC_DISCH_ACK": "Number of successful FHIR ToC emergency care discharge messages" })
 df4['recipientOdsCode'] = df4['recipientOdsCode'].str[:3] #------ Only retain the first three characters of the NHS Trust Site ODS code, to equate it to the NHS Trust ODS code
-df4.columns.name = None
+
 
 #Denominator data ingestion and processing
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, denominator_source_path)
 file = datalake_download(CONNECTION_STRING, file_system, denominator_source_path+latestFolder, denominator_source_file)
 df_denom = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
-df_denom_1 = df_denom[df_denom['Breakdown'] == 'Provider'].reset_index(drop = True)
-df_denom_2 = df_denom_1[['Reporting_Period_Start', 'Primary_Level', 'Measure_Value_Str']]
-value_low_no_suppression =  float((df_denom[df_denom['Breakdown'] == 'England']['Measure_Value'].sum() - df_denom[df_denom['Breakdown'] == 'Provider']['Measure_Value'].sum())/
-                                  len(df_denom[df_denom['Measure_Value_Str'] == '*'])) #------ Function used to calculate value to replace '*' (low number suppression) from the total number of mental health discharges in England
-df_denom_2['Measure_Value_Str'] = df_denom_2['Measure_Value_Str'].replace("*", value_low_no_suppression).apply(pd.to_numeric)
-df_denom_3 = df_denom_2.groupby([pd.to_datetime(df_denom_2['Reporting_Period_Start']).dt.strftime('%Y-%m'), 'Primary_Level'])['Measure_Value_Str'].sum().reset_index()
+df_denom_1 = df_denom.groupby([pd.to_datetime(df_denom['Departure_Date']).dt.strftime('%Y-%m-%d'), 'Der_Provider_Code'])['EC_Departures'].sum().reset_index()
+df_denom_1 = df_denom_1[df_denom_1["Departure_Date"] < datetime.today().strftime("%Y-%m-%d")] #----- removes all fictious dates from the data 
 
 #Joined data processing
-df_join = pd.merge(df_denom_3, df4,  how='left',  left_on = ['Reporting_Period_Start', 'Primary_Level'], right_on=['_time', 'recipientOdsCode'])
-df_join_1 = df_join.drop(columns = ['_time', 'recipientOdsCode']).rename(columns = {'Reporting_Period_Start': 'Date',
-                                                                                    'Primary_Level': 'Trust code',
-                                                                                    'Measure_Value_Str': 'Number of mental health care related discharges'}).fillna(0)
-df_join_1['Mental health FHIR ToC utilisation (per 1,000 discharges)'] = df_join_1["Number of successful FHIR ToC mental health discharge messages"]/ (df_join_1['Number of mental health care related discharges']/1000)
-df_join_2 = df_join_1.round(2)
+df_join = pd.merge(df_denom_1, df4,  how='left', left_on=['Departure_Date', 'Der_Provider_Code'], right_on = ['_time', 'recipientOdsCode'])
+df_join_1 = df_join.drop(columns = ['_time', 'recipientOdsCode']).rename(columns = {'Departure_Date': 'Date',
+                                                                                    'Der_Provider_Code': 'Trust code',
+                                                                                    'EC_Departures': 'Number of emergency care patient discharges'}).fillna(0)
+df_join_2 = df_join_1.groupby([pd.to_datetime(df_join_1['Date']).dt.strftime("%Y-%m"),'Trust code']).sum().reset_index()
+df_join_2['Emergency care FHIR ToC utilisation (per 1,000 discharges)'] = df_join_2["Number of successful FHIR ToC emergency care discharge messages"]/ (df_join_2['Number of emergency care patient discharges']/1000)
+df_join_2 =  df_join_2[df_join_2['Date'] < df_join_2['Date'].max()] #----- drop latest month in the data to account for incomplete submission of discharges and avoid data quality issues
+df_join_2 = df_join_2.round(2)
 df_join_2.index.name = "Unique ID"
 df_processed = df_join_2.copy()
 
