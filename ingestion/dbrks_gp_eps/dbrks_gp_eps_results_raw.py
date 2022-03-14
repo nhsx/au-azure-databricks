@@ -18,7 +18,7 @@ USAGE:
 CONTRIBUTORS:   Craig Shenton, Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
 CREATED:        04 Oct. 2021
-VERSION:        0.0.1
+VERSION:        0.0.2
 """
 
 # COMMAND ----------
@@ -36,6 +36,7 @@ import os
 import io
 import tempfile
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 import json
 
 # 3rd party:
@@ -93,9 +94,11 @@ eps_df_snapshot = eps_df_snapshot.rename(columns = {'% of patients with a nomina
 #Extract date from csv URL
 date_from_csv = csv_url.partition("erd-data-")[2].partition(".csv")[0].title()
 date_from_csv_final = datetime.strptime(date_from_csv, '%B-%Y').strftime('%Y-%m-%d')
-
-#Add column date to table
-eps_df_snapshot['Date'] = date_from_csv_final
+if date_from_csv_final > datetime.today().strftime("%Y-%m-%d"):
+  date_from_csv_final_fix = (datetime.strptime(date_from_csv, '%B-%Y') - relativedelta(years=1)).strftime("%Y-%m-%d")
+  eps_df_snapshot['Date'] = date_from_csv_final_fix #------ Add column date to table
+else:
+   eps_df_snapshot['Date'] = date_from_csv_final #------ Add column date to table
 
 # COMMAND ----------
 
@@ -114,7 +117,7 @@ historical_dataframe = pd.read_parquet(io.BytesIO(historical_dataset), engine="p
 
 # Append new data to historical data
 # -----------------------------------------------------------------------
-if date_from_csv_final not in historical_dataframe.values:
+if eps_df_snapshot['Date'].max() not in historical_dataframe.values:
   historical_dataframe = historical_dataframe.append(eps_df_snapshot)
   historical_dataframe = historical_dataframe.reset_index(drop=True)
   historical_dataframe.index.name = "Unique ID"
