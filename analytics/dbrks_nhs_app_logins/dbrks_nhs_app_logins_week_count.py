@@ -78,6 +78,7 @@ latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow", columns =['_time', 'Accounts'])
 df.rename(columns = {'_time': 'Date', 'Accounts': 'No. of people logging into NHS digital services'}, inplace = True)
+df.index.name = "Unique ID"
 df_processed = df.copy()
 
 # COMMAND ----------
