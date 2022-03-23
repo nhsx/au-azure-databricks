@@ -90,9 +90,8 @@ nhs_login_file_name_list = datalake_listContents(CONNECTION_STRING, file_system,
 for new_source_file in nhs_login_file_name_list:
   new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path+latestFolder, new_source_file)
   new_dataframe = pd.read_csv(io.BytesIO(new_dataset))
-  
-new_dataframe.rename({"_time": "date"}, axis = 'columns', inplace = True)
-new_dataframe['date'] = pd.to_datetime(new_dataframe['date'], format='%c')
+
+new_dataframe['_time'] = pd.to_datetime(new_dataframe['_time'], format='%c')
 
 # COMMAND ----------
 
@@ -101,24 +100,23 @@ new_dataframe['date'] = pd.to_datetime(new_dataframe['date'], format='%c')
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, historical_source_path)
 historical_dataset = datalake_download(CONNECTION_STRING, file_system, historical_source_path+latestFolder, historical_source_file)
 historical_dataframe = pd.read_parquet(io.BytesIO(historical_dataset), engine="pyarrow")
-historical_copy = historical_dataframe.copy()
 
 # COMMAND ----------
 
 # Combine new data with historic data
 # -----------------------------------------------------------------------
 #Used sets instead of lists as they will run faster. 
-existing_dates = set(historical_dataframe['date'])
-new_dates = set(new_dataframe['date'])
+existing_dates = set(historical_dataframe['_time'])
+new_dates = set(new_dataframe['_time'])
 
 #loop through each row of data in new file. If the data already exists in the historic data, overwrite it with new data. If it doesn't, append it to end.  
 for date in new_dates:
  if date in existing_dates:
-  historical_dataframe[historical_dataframe['date'] == date] = new_dataframe[new_dataframe['date'] == date]
+  historical_dataframe[historical_dataframe['_time'] == date] = new_dataframe[new_dataframe['_time'] == date]
  else:
-  historical_dataframe = historical_dataframe.append(new_dataframe[new_dataframe['date'] == date])
+  historical_dataframe = historical_dataframe.append(new_dataframe[new_dataframe['_time'] == date])
 
-historical_dataframe = historical_dataframe.sort_values(by=['date'])
+historical_dataframe = historical_dataframe.sort_values(by=['_time'])
 historical_dataframe = historical_dataframe.reset_index(drop=True)
 
 # COMMAND ----------
@@ -128,7 +126,3 @@ current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
 file_contents = io.BytesIO()
 historical_dataframe.to_parquet(file_contents, engine="pyarrow")
 datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, sink_file)
-
-# COMMAND ----------
-
-historical_dataframe
