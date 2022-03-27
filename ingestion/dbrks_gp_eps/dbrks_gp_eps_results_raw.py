@@ -87,7 +87,7 @@ url = "https://digital.nhs.uk/data-and-information/data-tools-and-services/tools
 response = urlreq.urlopen(url)
 soup = BeautifulSoup(response.read(), "lxml")
 data = soup.select_one("a[href*='erd-data']")
-csv_url = 'https:' +  data['href']
+csv_url = 'https://digital.nhs.uk' +  data['href']
 eps_df_snapshot = pd.read_csv(csv_url)
 eps_df_snapshot = eps_df_snapshot.rename(columns = {'% of patients with a nomination': '% with nominated pharm'})
 
