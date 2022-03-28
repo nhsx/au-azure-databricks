@@ -99,8 +99,6 @@ df = df.round(4)
 df.index.name = "Unique ID"
 df_processed = df.copy()
 
-df_processed
-
 # COMMAND ----------
 
 #Upload processed data to datalake
