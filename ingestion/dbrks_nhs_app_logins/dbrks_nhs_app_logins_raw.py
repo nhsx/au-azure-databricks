@@ -67,19 +67,14 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 
 # COMMAND ----------
 
-
-
-# COMMAND ----------
-
 # Read parameters from JSON config
 # -------------------------------------------------------------------------
 file_system = config_JSON['pipeline']['adl_file_system']
-new_source_path = config_JSON['pipeline']['raw']['snapshot_source_path'] #"land/datainbox/email_attachment/alerts@splunkcloud.com/Splunk Alert: Last 6 Months Unique Accounts and Total logins by Week/"
+new_source_path = config_JSON['pipeline']['raw']['snapshot_source_path'] 
 historical_source_path = config_JSON['pipeline']['raw']['appended_path']
 historical_source_file = config_JSON['pipeline']['raw']['appended_file']
 sink_path = config_JSON['pipeline']['raw']['appended_path']
 sink_file = config_JSON['pipeline']['raw']['appended_file']
-
 
 # COMMAND ----------
 
@@ -87,11 +82,11 @@ sink_file = config_JSON['pipeline']['raw']['appended_file']
 # -------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, new_source_path)
 nhs_login_file_name_list = datalake_listContents(CONNECTION_STRING, file_system, new_source_path+latestFolder)
+
 for new_source_file in nhs_login_file_name_list:
   new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path+latestFolder, new_source_file)
   new_dataframe = pd.read_csv(io.BytesIO(new_dataset))
-
-new_dataframe['_time'] = pd.to_datetime(new_dataframe['_time'], format='%c')
+new_dataframe['_time'] = pd.to_datetime(new_dataframe['_time']).dt.strftime('%Y-%m-%d')
 
 # COMMAND ----------
 
@@ -101,23 +96,17 @@ latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, historical_
 historical_dataset = datalake_download(CONNECTION_STRING, file_system, historical_source_path+latestFolder, historical_source_file)
 historical_dataframe = pd.read_parquet(io.BytesIO(historical_dataset), engine="pyarrow")
 
-# COMMAND ----------
-
 # Combine new data with historic data
-# -----------------------------------------------------------------------
-#Used sets instead of lists as they will run faster. 
-existing_dates = set(historical_dataframe['_time'])
-new_dates = set(new_dataframe['_time'])
-
-#loop through each row of data in new file. If the data already exists in the historic data, overwrite it with new data. If it doesn't, append it to end.  
+# -----------------------------------
+new_dates = list(new_dataframe['_time'])
+historical_dates = list(historical_dataframe['_time'])
 for date in new_dates:
- if date in existing_dates:
-  historical_dataframe[historical_dataframe['_time'] == date] = new_dataframe[new_dataframe['_time'] == date]
- else:
-  historical_dataframe = historical_dataframe.append(new_dataframe[new_dataframe['_time'] == date])
-
-historical_dataframe = historical_dataframe.sort_values(by=['_time'])
-historical_dataframe = historical_dataframe.reset_index(drop=True)
+  if date in historical_dates:
+    historical_dataframe.loc[historical_dataframe["_time"] == date, "Accounts"] = new_dataframe.loc[new_dataframe["_time"] == date, 'Accounts'].tolist()[0]
+    historical_dataframe.loc[historical_dataframe["_time"] == date, "Total Logins"] = new_dataframe.loc[new_dataframe["_time"] == date, 'Total Logins'].tolist()[0]
+  else:
+    historical_dataframe = historical_dataframe.append(new_dataframe[new_dataframe['_time'] == date])
+    historical_dataframe = historical_dataframe.reset_index(drop = True)
 
 # COMMAND ----------
 
