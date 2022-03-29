@@ -77,26 +77,15 @@ historical_source_file = config_JSON['pipeline']['raw']['appended_file']
 sink_path = config_JSON['pipeline']['raw']['appended_path']
 sink_file = config_JSON['pipeline']['raw']['appended_file']
 
-
 # COMMAND ----------
 
 # Pull new snapshot dataset
 # -------------------------
-current_month = datetime.now().strftime('%B') + '/'
-last_month = (datetime.now() - relativedelta(months=1)).strftime('%B') + '/'
-try:
-  new_source_path_date = new_source_path + current_month
-  latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, new_source_path_date)
-  file_name_list = datalake_listContents(CONNECTION_STRING, file_system, new_source_path_date+latestFolder)
-  file_name_list = [file for file in file_name_list if '.xlsx' in file]
-except:
-  new_source_path_date = new_source_path + last_month
-  latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, new_source_path_date)
-  file_name_list = datalake_listContents(CONNECTION_STRING, file_system, new_source_path_date+latestFolder)
-  file_name_list = [file for file in file_name_list if '.xlsx' in file]
-  
+latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, new_source_path)
+file_name_list = datalake_listContents(CONNECTION_STRING, file_system, new_source_path+latestFolder)
+file_name_list = [file for file in file_name_list if '.xlsx' in file]
 for new_source_file in file_name_list:
-  new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path_date+latestFolder, new_source_file)
+  new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path+latestFolder, new_source_file)
   header_list = ["Unnamed","CQC registered location - latest DSPT status", "Date of location publication", "Location CQC ID ", "Location start date", "Care home?", "Location name", "Location ODS code", "Location telephone number", "CQC registered manager","Location region","Region","Location local authority","Location ONSPD CCG","Location street address","Location address line 2", "Location city", "Location county", "Location postal code", "Brand ID", "Brand name", "Name of parent organisation", "CQC ID of parent organisation", "Larger organisation?", "Single Location", "Parent ODS code", "Latest DSPT status of parent", "Dormant (Y/N)"]
   new_dataframe = pd.read_excel(io.BytesIO(new_dataset), sheet_name = 'Line By Line', header = 4, engine='openpyxl', names = header_list)
   new_dataframe_1 = new_dataframe.loc[:, ~new_dataframe.columns.str.contains('^Unnamed')]
