@@ -81,6 +81,11 @@ file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolde
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 df["Count"] = 1
 df_1 = df.groupby(['Date',"CQC registered location - latest DSPT status"]).sum().reset_index()
+
+#Makes changed as outlined in the SOP when the finanical year flag for Standards Met/Exceeded changes
+#----------------------------------------------------------------------------------------------------
+#19/20 and 20/21 FY
+#-----------------------------------
 df_2 = df_1.loc[df_1['Date'] <= '2021-09']
 df_3 = df_2[
 (df_2["CQC registered location - latest DSPT status"] == "19/20 Standards Met.") |
@@ -89,7 +94,10 @@ df_3 = df_2[
 (df_2["CQC registered location - latest DSPT status"] == "20/21 Standards Exceeded.")
 ].reset_index(drop=True)
 df_4 = df_3.groupby("Date").sum().reset_index()
-df_5 = df_1.loc[df_1['Date'] >= '2021-10']
+
+#20/21 and 21/22 FY
+#---------------------------------
+df_5 = df_1.loc[df_1['Date'] >= '2021-10'] #------------- change filter once new finanical year added.
 df_6 = df_5[
 (df_5["CQC registered location - latest DSPT status"] == "20/21 Standards Met.") |
 (df_5["CQC registered location - latest DSPT status"] == "20/21 Standards Exceeded.") |
@@ -97,15 +105,21 @@ df_6 = df_5[
 (df_5["CQC registered location - latest DSPT status"] == "21/22 Standards Exceeded.")
 ].reset_index(drop=True)
 df_7 = df_6.groupby("Date").sum().reset_index()
-df_8 = df_4.append(df_7).reset_index(drop = True)
 
-df_4 = df_1.groupby("Date").sum().reset_index()
-df_9 = df_8.merge(df_4, on = 'Date', how = 'left')
-df_10 = df_9.rename(columns = { 'Count_x':'Number of social care organizations with a standards met or exceeded DSPT status', 'Count_y':'Total number of social care organizations'})
-df_10["Percent of social care organizations with a standards met or exceeded DSPT status"] = df_10['Number of social care organizations with a standards met or exceeded DSPT status']/df_10['Total number of social care organizations']
-df_11 = df_10.round(4)
-df_11.index.name = "Unique ID"
-df_processed = df_11.copy()
+#21/22 and 22/23 FY
+#---------------------------------
+# Add code here
+
+#---------------------------------------------------------------------------------------
+df_fy_appended = pd.concat([df_4, df_7]).reset_index(drop = True) #------------- Once a new finanical year is added appened additional FY dataframe. ie pd.concat([df_4, df_7, df_10]).reset_index(drop = True)
+#---------------------------------------------------------------------------------------
+df_dates = df_1.groupby("Date").sum().reset_index()
+df_dates_merged = df_fy_appended.merge(df_dates, on = 'Date', how = 'left')
+df_dates_merged_1 = df_dates_merged.rename(columns = { 'Count_x':'Number of social care organizations with a standards met or exceeded DSPT status', 'Count_y':'Total number of social care organizations'})
+df_dates_merged_1["Percent of social care organizations with a standards met or exceeded DSPT status"] = df_dates_merged_1['Number of social care organizations with a standards met or exceeded DSPT status']/df_dates_merged_1['Total number of social care organizations']
+df_dates_merged_2 = df_dates_merged_1 .round(4)
+df_dates_merged_2.index.name = "Unique ID"
+df_processed = df_dates_merged_2.copy()
 
 # COMMAND ----------
 
