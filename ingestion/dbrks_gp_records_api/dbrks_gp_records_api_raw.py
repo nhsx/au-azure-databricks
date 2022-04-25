@@ -84,8 +84,8 @@ sink_file = config_JSON['pipeline']['raw']['appended_file']
 url = "https://digital.nhs.uk/services/gp-connect/deployment-and-utilisation"
 response = urllib.request.urlopen(url)
 soup = BeautifulSoup(response.read(), "lxml")
-data = soup.findAll("p",attrs={"class": "nhsd-t-body",},)[2].text
-latestDate = search_dates(data)
+date_data = soup.find(lambda tag:tag.name=="p" and "date" in tag.text)
+latestDate = search_dates(date_data.text)
 date = latestDate[0][1].strftime("%Y-%m-%d")
 results = []
 for pp in soup.select("div.nhsd-m-infographic__headline-box"):
