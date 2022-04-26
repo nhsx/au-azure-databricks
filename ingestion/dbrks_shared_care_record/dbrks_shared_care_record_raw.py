@@ -252,9 +252,10 @@ stp_df= stp_df[['For Month', 'ODS STP Code', 'STP Name', 'ICS Name (if applicabl
 # COMMAND ----------
 
 folder_date = pd.to_datetime(latestFolder) - pd.DateOffset(months=1)
-folder_date
 
 stp_df['For Month'] = folder_date
+stp_df['Date completed'] = pd.to_datetime(stp_df['Date completed'],errors='coerce')
+
 pcn_df['For Month'] = folder_date
 trust_df['For Month'] = folder_date
 
@@ -328,6 +329,7 @@ for file in file_name_list:
     stp_df_historic = datalake_download(CONNECTION_STRING, file_system, historical_source_path+latestFolder, file)
     stp_df_historic = pd.read_parquet(io.BytesIO(stp_df_historic), engine="pyarrow")
     stp_df_historic['For Month'] = pd.to_datetime(stp_df_historic['For Month'])
+    stp_df_historic['Date completed'] = pd.to_datetime(stp_df_historic['Date completed'],errors='coerce')
   if 'pcn' in file:
     pcn_df_historic = datalake_download(CONNECTION_STRING, file_system, historical_source_path+latestFolder, file)
     pcn_df_historic = pd.read_parquet(io.BytesIO(pcn_df_historic), engine="pyarrow")
@@ -386,11 +388,11 @@ file_contents = io.BytesIO()
 #pcn
 pcn_df_historic.to_parquet(file_contents, engine="pyarrow")
 datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_pcn_data_month_count.parquet")
-#stp
+# #stp
 file_contents = io.BytesIO()
 stp_df_historic.to_parquet(file_contents, engine="pyarrow")
 datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_stp_data_month_count.parquet")
-#trust
+# #trust
 file_contents = io.BytesIO()
 trust_df_historic.to_parquet(file_contents, engine="pyarrow")
 datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_trust_data_month_count.parquet")
