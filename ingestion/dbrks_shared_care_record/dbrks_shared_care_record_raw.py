@@ -73,6 +73,7 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 file_system = config_JSON['pipeline']['adl_file_system']
 source_path = config_JSON['pipeline']['raw']['source_path']
 sink_path = config_JSON['pipeline']['raw']['sink_path']
+historical_source_path = config_JSON['pipeline']['raw']['sink_path']
 
 # COMMAND ----------
 
@@ -250,6 +251,15 @@ stp_df= stp_df[['For Month', 'ODS STP Code', 'STP Name', 'ICS Name (if applicabl
 
 # COMMAND ----------
 
+folder_date = pd.to_datetime(latestFolder) - pd.DateOffset(months=1)
+folder_date
+
+stp_df['For Month'] = folder_date
+pcn_df['For Month'] = folder_date
+trust_df['For Month'] = folder_date
+
+# COMMAND ----------
+
 ### check for duplicates
 # import collections
 # a = [item for item, count in collections.Counter(trust_df['ODS Trust Code']).items() if count > 1]
@@ -258,15 +268,14 @@ stp_df= stp_df[['For Month', 'ODS STP Code', 'STP Name', 'ICS Name (if applicabl
 # #a = [item for item, count in collections.Counter(pcn_df['ODS PCN Code']).items() if count > 1]
 # #pcn_df[pcn_df['ODS PCN Code'].isin(a)].sort_values(by='ODS Trust Code')
 
-
 # COMMAND ----------
 
-#cast all date fields to datetime format and set to 1st of the month
-dt =lambda dt: dt.replace(day=1)
+# #cast all date fields to datetime format and set to 1st of the month
+# dt =lambda dt: dt.replace(day=1)
 
-pcn_df['For Month'] = pd.to_datetime(pcn_df['For Month']).apply(dt)
-stp_df['For Month'] = pd.to_datetime(stp_df['For Month']).apply(dt)
-trust_df['For Month'] = pd.to_datetime(trust_df['For Month']).apply(dt)
+# pcn_df['For Month'] = pd.to_datetime(pcn_df['For Month']).apply(dt)
+# stp_df['For Month'] = pd.to_datetime(stp_df['For Month']).apply(dt)
+# trust_df['For Month'] = pd.to_datetime(trust_df['For Month']).apply(dt)
 
 # COMMAND ----------
 
@@ -288,6 +297,7 @@ pcn_count_df['Type'] = 'PCN'
 
 # COMMAND ----------
 
+#SNAPSHOT SUMMARY
 #Write pages to Excel file in iobytes
 files = [stp_df, trust_df, trust_count_df, pcn_df, pcn_count_df]
 sheets = ['STP', 'Trust', 'Trust Count', 'PCN', 'PCN Count']
@@ -300,7 +310,8 @@ writer.save()
 
 # COMMAND ----------
 
-#Send Excel File to test Output in datalake
+#SNAPSHOT SUMMARY
+#Send Excel snapshot File to test Output in datalake
 current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
 
 file_contents = excel_sheet
@@ -308,18 +319,78 @@ datalake_upload(file_contents, CONNECTION_STRING, "nhsxdatalakesagen2fsprod", "p
 
 # COMMAND ----------
 
-# Upload appended data to datalake
-current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
+#Pull historical files
+latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, historical_source_path)
 
-# STP
-file_contents = io.StringIO()
-stp_df.to_csv(file_contents, index=False)
-datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_stp_data_month_count.csv")
-# Trust
-file_contents = io.StringIO()
-trust_df.to_csv(file_contents, index=False)
-datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_trust_data_month_count.csv")
-# PCN
-file_contents = io.StringIO()
-pcn_df.to_csv(file_contents, index=False)
-datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_pcn_data_month_count.csv")
+file_name_list = datalake_listContents(CONNECTION_STRING, file_system, historical_source_path+latestFolder)
+for file in file_name_list:
+  if 'stp' in file:
+    stp_df_historic = datalake_download(CONNECTION_STRING, file_system, historical_source_path+latestFolder, file)
+    stp_df_historic = pd.read_parquet(io.BytesIO(stp_df_historic), engine="pyarrow")
+    stp_df_historic['For Month'] = pd.to_datetime(stp_df_historic['For Month'])
+  if 'pcn' in file:
+    pcn_df_historic = datalake_download(CONNECTION_STRING, file_system, historical_source_path+latestFolder, file)
+    pcn_df_historic = pd.read_parquet(io.BytesIO(pcn_df_historic), engine="pyarrow")
+    pcn_df_historic['For Month'] = pd.to_datetime(pcn_df_historic['For Month'])
+  if 'trust' in file:
+    trust_df_historic = datalake_download(CONNECTION_STRING, file_system, historical_source_path+latestFolder, file)
+    trust_df_historic = pd.read_parquet(io.BytesIO(trust_df_historic), engine="pyarrow")
+    trust_df_historic['For Month'] = pd.to_datetime(trust_df_historic['For Month'])
+    
+
+# COMMAND ----------
+
+# # Append new data to historical data
+# # -----------------------------------------------------------------------
+#STP
+dates_in_historic = stp_df_historic["For Month"].unique().tolist()
+dates_in_new = stp_df["For Month"].unique().tolist()[0]
+
+if dates_in_new in dates_in_historic:
+  print('STP Data already exists in historical STP data')
+else:
+  stp_df_historic = stp_df_historic.append(stp_df)
+  stp_df_historic = stp_df_historic.sort_values(by=['For Month'])
+  stp_df_historic = stp_df_historic.reset_index(drop=True)
+  stp_df_historic = stp_df_historic.astype(str)
+  
+#PCN
+dates_in_historic = pcn_df_historic["For Month"].unique().tolist()
+dates_in_new = pcn_df["For Month"].unique().tolist()[0]
+
+if dates_in_new in dates_in_historic:
+  print('PCN Data already exists in historical STP data')
+else:
+  pcn_df_historic = pcn_df_historic.append(pcn_df)
+  pcn_df_historic = pcn_df_historic.sort_values(by=['For Month'])
+  pcn_df_historic = pcn_df_historic.reset_index(drop=True)
+  pcn_df_historic = pcn_df_historic.astype(str)
+  
+#TRUST
+dates_in_historic = trust_df_historic["For Month"].unique().tolist()
+dates_in_new = trust_df["For Month"].unique().tolist()[0]
+
+if dates_in_new in dates_in_historic:
+  print('Trust Data already exists in historical STP data')
+else:
+  trust_df_historic = trust_df_historic.append(trust_df)
+  trust_df_historic = trust_df_historic.sort_values(by=['For Month'])
+  trust_df_historic = trust_df_historic.reset_index(drop=True)
+  trust_df_historic = trust_df_historic.astype(str)
+
+# COMMAND ----------
+
+# Upload processed data to datalake
+current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
+file_contents = io.BytesIO()
+#pcn
+pcn_df_historic.to_parquet(file_contents, engine="pyarrow")
+datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_pcn_data_month_count.parquet")
+#stp
+file_contents = io.BytesIO()
+stp_df_historic.to_parquet(file_contents, engine="pyarrow")
+datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_stp_data_month_count.parquet")
+#trust
+file_contents = io.BytesIO()
+trust_df_historic.to_parquet(file_contents, engine="pyarrow")
+datalake_upload(file_contents, CONNECTION_STRING, file_system, sink_path+current_date_path, "shcr_partners_trust_data_month_count.parquet")
