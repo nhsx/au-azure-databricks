@@ -8,9 +8,9 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_nhs_app_usage_organ_donation_update_day_count.py
+FILE:           dbrks_nhs_app_usage_organ_donation_withdrawal_day_count.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analytics unit metric M0158: Organ Donation Update (GP practice level)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric M0157: Organ Donation Withdrawal (GP practice level)
 USAGE:
                 ...
 CONTRIBUTORS:   Everistus Oputa
@@ -66,8 +66,8 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 file_system = config_JSON['pipeline']['adl_file_system']
 source_path = config_JSON['pipeline']['project']['source_path']
 source_file = config_JSON['pipeline']['project']['source_file']
-sink_path = config_JSON['pipeline']['project']['databricks'][16]['sink_path']
-sink_file = config_JSON['pipeline']['project']['databricks'][16]['sink_file']  
+sink_path = config_JSON['pipeline']['project']['databricks'][15]['sink_path']
+sink_file = config_JSON['pipeline']['project']['databricks'][15]['sink_file']  
 
 # COMMAND ----------
 
@@ -81,12 +81,12 @@ df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 
 #Processing
 # ---------------------------------------------------------------------------------------------------
-df1 = df[["Date", "OdsCode", "ODUpdates"]].copy()
+df1 = df[["Date", "OdsCode", "ODWithdrawals"]].copy()
 df1['Date'] = pd.to_datetime(df1['Date'], infer_datetime_format=True)
 df2 = df1[df1['Date'] >= '2021-01-01'].reset_index(drop = True)  #--------- remove rows pre 2021
-df2['ODUpdates'] = pd.to_numeric(df2['ODUpdates'],errors='coerce').fillna(0)
+df2['ODWithdrawals'] = pd.to_numeric(df2['ODWithdrawals'],errors='coerce').fillna(0)
 df3 = df2.groupby(['Date','OdsCode']).sum().reset_index()
-df4 = df3.rename(columns = {'OdsCode': 'Practice code', 'ODUpdates': 'Number of Organ Donation Update'})
+df4 = df3.rename(columns = {'OdsCode': 'Practice code', 'ODWithdrawals': 'Number of Organ Donation Withdrawal'})
 df4.index.name = "Unique ID"
 df_processed = df4.copy()
 
