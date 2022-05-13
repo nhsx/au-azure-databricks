@@ -10,7 +10,7 @@
 """
 FILE:           dbrks_nhs_app_usage_organ_donation_lookup_day_count.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analytics unit metric M0159: Organ Donation Lookup (GP practice level)
+                Databricks notebook with processing code for the NHSX Analytics unit metric M0159: Organ Donation Lookup  (GP practice level)
 USAGE:
                 ...
 CONTRIBUTORS:   Everistus Oputa
