@@ -10,7 +10,7 @@
 """
 FILE:           dbrks_nhs_app_usage_detail_coded_record_views_day_count.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analytics unit metric M0155: Detail Coded Record Views (GP practice level)
+                Databricks notebook with processing code for the NHSX Analytics unit metric M0155: Detail Coded Record Views  (GP practice level)
 USAGE:
                 ...
 CONTRIBUTORS:   Everistus Oputa

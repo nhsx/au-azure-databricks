@@ -10,7 +10,7 @@
 """
 FILE:           dbrks_nhs_app_usage_organ_donation_withdrawal_day_count.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric M0157: Organ Donation Withdrawal (GP practice level)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric M0157: Organ Donation Withdrawal  (GP practice level)
 USAGE:
                 ...
 CONTRIBUTORS:   Everistus Oputa

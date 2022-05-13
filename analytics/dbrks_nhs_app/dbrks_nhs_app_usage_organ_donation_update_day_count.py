@@ -10,7 +10,7 @@
 """
 FILE:           dbrks_nhs_app_usage_organ_donation_update_day_count.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analytics unit metric M0158: Organ Donation Update (GP practice level)
+                Databricks notebook with processing code for the NHSX Analytics unit metric M0158: Organ Donation Update  (GP practice level)
 USAGE:
                 ...
 CONTRIBUTORS:   Everistus Oputa
