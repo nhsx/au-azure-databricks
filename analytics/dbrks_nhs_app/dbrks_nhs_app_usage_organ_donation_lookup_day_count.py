@@ -86,7 +86,7 @@ df1['Date'] = pd.to_datetime(df1['Date'], infer_datetime_format=True)
 df2 = df1[df1['Date'] >= '2021-01-01'].reset_index(drop = True)  #--------- remove rows pre 2021
 df2['ODLookups'] = pd.to_numeric(df2['ODLookups'],errors='coerce').fillna(0)
 df3 = df2.groupby(['Date','OdsCode']).sum().reset_index()
-df4 = df3.rename(columns = {'OdsCode': 'Practice code', 'ODLookups': 'Number of Organ Donation Lookup'})
+df4 = df3.rename(columns = {'OdsCode': 'Practice code', 'ODLookups': 'Number of organ donation lookups'})
 df4.index.name = "Unique ID"
 df_processed = df4.copy()
 
