@@ -89,6 +89,7 @@ df2=df2.sort_values(['Date']).reset_index(drop=True)
 df2["Cumulative number of NHS app registrations"]=df2.groupby(['OdsCode'])['AcceptedTermsAndConditions'].cumsum(axis=0)
 df3 = df2.drop(columns = ['AcceptedTermsAndConditions']).reset_index(drop = True)
 df4 = df3.rename(columns = {'OdsCode': 'Practice code'})
+df4.index.name = "Unique ID"
 df_processed = df4.copy()
 
 # COMMAND ----------
