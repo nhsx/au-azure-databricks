@@ -83,11 +83,7 @@ df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 # ---------------------------------------------------------------------------------------------------
 ref_latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, reference_source_path)
 file = datalake_download(CONNECTION_STRING, file_system, reference_source_path+ref_latestFolder, reference_source_file)
-= pd.read_parquet(io.BytesIO(file), engine="pyarrow")
-
-# COMMAND ----------
-
-df_ref 
+df_ref = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 
 # COMMAND ----------
 
