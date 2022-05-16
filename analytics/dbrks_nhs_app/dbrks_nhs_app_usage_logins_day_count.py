@@ -8,7 +8,7 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_nhs_app_usage_organ_donation_withdrawal_day_count.py
+FILE:           dbrks_nhs_app_usage_logins_day_count.py
 DESCRIPTION:
                 Databricks notebook with processing code for the NHSX Analyticus unit metric M0149: Logins (GP practice level)
 USAGE:

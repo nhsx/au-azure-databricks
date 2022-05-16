@@ -8,7 +8,7 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_nhs_app_usage_organ_donation_withdrawal_day_count.py
+FILE:           dbrks_nhs_app_usage_primary_care_appointments_cancelled_day_count.py
 DESCRIPTION:
                 Databricks notebook with processing code for the NHSX Analyticus unit metric M0150: Primary Care Appointment Cancelled (GP practice level)
 USAGE:

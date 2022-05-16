@@ -8,7 +8,7 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_nhs_app_usage_organ_donation_withdrawal_day_count.py
+FILE:           dbrks_nhs_app_usage_repeat_prescriptions_day_count.py
 DESCRIPTION:
                 Databricks notebook with processing code for the NHSX Analyticus unit metric M0152: Repeat Prescriptions (GP practice level)
 USAGE:
