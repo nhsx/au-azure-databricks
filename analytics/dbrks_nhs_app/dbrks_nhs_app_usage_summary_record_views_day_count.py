@@ -66,8 +66,8 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 file_system = config_JSON['pipeline']['adl_file_system']
 source_path = config_JSON['pipeline']['project']['source_path']
 source_file = config_JSON['pipeline']['project']['source_file']
-sink_path = config_JSON['pipeline']['project']['databricks'][15]['sink_path']
-sink_file = config_JSON['pipeline']['project']['databricks'][15]['sink_file']  
+sink_path = config_JSON['pipeline']['project']['databricks'][12]['sink_path']
+sink_file = config_JSON['pipeline']['project']['databricks'][12]['sink_file']  
 
 # COMMAND ----------
 
@@ -86,7 +86,7 @@ df1['Date'] = pd.to_datetime(df1['Date'], infer_datetime_format=True)
 df2 = df1[df1['Date'] >= '2021-01-01'].reset_index(drop = True)  #--------- remove rows pre 2021
 df2['RecordViewsSCR'] = pd.to_numeric(df2['RecordViewsSCR'],errors='coerce').fillna(0)
 df3 = df2.groupby(['Date','OdsCode']).sum().reset_index()
-df4 = df3.rename(columns = {'OdsCode': 'Practice code', 'RecordViewsSCR': 'Number of Summary Care Record Views'})
+df4 = df3.rename(columns = {'OdsCode': 'Practice code', 'RecordViewsSCR': 'Number of summary care record views'})
 df_processed = df4.copy()
 
 # COMMAND ----------
