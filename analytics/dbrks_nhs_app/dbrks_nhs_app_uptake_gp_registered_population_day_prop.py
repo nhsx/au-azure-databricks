@@ -8,14 +8,14 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_nhs_app_usage_organ_donation_lookup_day_count.py
+FILE:           ddbrks_nhs_app_uptake_gp_registered_population_day_prop.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analytics unit metric M0159: Organ Donation Lookup  (GP practice level)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric M0148: % of GP Patients Registered for NHS App (GP practice level)
 USAGE:
                 ...
-CONTRIBUTORS:   Everistus Oputa
+CONTRIBUTORS:   Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        12th May 2022
+CREATED:        16th May 2022
 VERSION:        0.0.1
 """
 
@@ -66,8 +66,10 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 file_system = config_JSON['pipeline']['adl_file_system']
 source_path = config_JSON['pipeline']['project']['source_path']
 source_file = config_JSON['pipeline']['project']['source_file']
-sink_path = config_JSON['pipeline']['project']['databricks'][16]['sink_path']
-sink_file = config_JSON['pipeline']['project']['databricks'][16]['sink_file']  
+reference_source_path = config_JSON['pipeline']['project']['reference_source_path_gp']
+reference_source_file = config_JSON['pipeline']['project']['reference_source_file_gp']
+sink_path = config_JSON['pipeline']['project']['databricks'][5]['sink_path']
+sink_file = config_JSON['pipeline']['project']['databricks'][5]['sink_file']
 
 # COMMAND ----------
 
@@ -77,18 +79,40 @@ latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 
+# Ingestion of reference deomintator data (ONS: age banded population data)
+# ---------------------------------------------------------------------------------------------------
+ref_latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, reference_source_path)
+file = datalake_download(CONNECTION_STRING, file_system, reference_source_path+ref_latestFolder, reference_source_file)
+= pd.read_parquet(io.BytesIO(file), engine="pyarrow")
+
+# COMMAND ----------
+
+df_ref 
+
 # COMMAND ----------
 
 #Processing
 # ---------------------------------------------------------------------------------------------------
-df1 = df[["Date", "OdsCode", "ODLookups"]].copy()
+df1 = df[["Date", "OdsCode", "P9VerifiedNHSAppUsers"]].copy()
 df1['Date'] = pd.to_datetime(df1['Date'], infer_datetime_format=True)
 df2 = df1[df1['Date'] >= '2021-01-01'].reset_index(drop = True)  #--------- remove rows pre 2021
-df2['ODLookups'] = pd.to_numeric(df2['ODLookups'],errors='coerce').fillna(0)
-df3 = df2.groupby(['Date','OdsCode']).sum().reset_index()
-df4 = df3.rename(columns = {'OdsCode': 'Practice code', 'ODLookups': 'Number of organ donation lookups'})
-df4.index.name = "Unique ID"
-df_processed = df4.copy()
+df2["P9VerifiedNHSAppUsers"] = pd.to_numeric(df2["P9VerifiedNHSAppUsers"],errors='coerce').fillna(0)
+df2=df2.sort_values(['Date']).reset_index(drop=True)
+df2["Cumulative number of P9 NHS app registrations"]=df2.groupby(['OdsCode'])["P9VerifiedNHSAppUsers"].cumsum(axis=0)
+df3 = df2.drop(columns = ["P9VerifiedNHSAppUsers"]).reset_index(drop = True)
+df4 = df3.rename(columns = {'OdsCode': 'Practice code'})
+
+# COMMAND ----------
+
+#Denominator porcessing
+# ---------------------------------------------------------------------------------------------------
+df_ref_1 = df_ref.rename(columns = {'GP_Practice_Code': 'Practice code', 'Registered_patient': 'Number of GP registered patients', 'Effective_Snapshot_Date': 'Snapshot date for GP Population data'})
+
+#Joint processing 
+# ---------------------------------------------------------------------------------------------------
+df5 = df4.merge(df_ref_1, how = 'left', on = 'Practice code')
+df5.index.name = "Unique ID"
+df_processed = df5.copy()
 
 # COMMAND ----------
 

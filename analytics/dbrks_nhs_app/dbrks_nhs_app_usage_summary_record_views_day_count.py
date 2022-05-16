@@ -8,14 +8,14 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_nhs_app_usage_organ_donation_lookup_day_count.py
+FILE:           dbrks_nhs_app_usage_summary_record_views_day_count.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analytics unit metric M0159: Organ Donation Lookup  (GP practice level)
+                Databricks notebook with processing code for the NHSX Analyticus unit metric M0154: Summary Record Views (GP practice level)
 USAGE:
                 ...
-CONTRIBUTORS:   Everistus Oputa
+CONTRIBUTORS:   Oliver Jones
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        12th May 2022
+CREATED:        16th May 2022
 VERSION:        0.0.1
 """
 
@@ -66,8 +66,8 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 file_system = config_JSON['pipeline']['adl_file_system']
 source_path = config_JSON['pipeline']['project']['source_path']
 source_file = config_JSON['pipeline']['project']['source_file']
-sink_path = config_JSON['pipeline']['project']['databricks'][16]['sink_path']
-sink_file = config_JSON['pipeline']['project']['databricks'][16]['sink_file']  
+sink_path = config_JSON['pipeline']['project']['databricks'][11]['sink_path']
+sink_file = config_JSON['pipeline']['project']['databricks'][11]['sink_file']  
 
 # COMMAND ----------
 
@@ -81,13 +81,12 @@ df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 
 #Processing
 # ---------------------------------------------------------------------------------------------------
-df1 = df[["Date", "OdsCode", "ODLookups"]].copy()
+df1 = df[["Date", "OdsCode", "RecordViewsSCR"]].copy()
 df1['Date'] = pd.to_datetime(df1['Date'], infer_datetime_format=True)
 df2 = df1[df1['Date'] >= '2021-01-01'].reset_index(drop = True)  #--------- remove rows pre 2021
-df2['ODLookups'] = pd.to_numeric(df2['ODLookups'],errors='coerce').fillna(0)
+df2['RecordViewsSCR'] = pd.to_numeric(df2['RecordViewsSCR'],errors='coerce').fillna(0)
 df3 = df2.groupby(['Date','OdsCode']).sum().reset_index()
-df4 = df3.rename(columns = {'OdsCode': 'Practice code', 'ODLookups': 'Number of organ donation lookups'})
-df4.index.name = "Unique ID"
+df4 = df3.rename(columns = {'OdsCode': 'Practice code', 'RecordViewsSCR': 'Number of summary care record views'})
 df_processed = df4.copy()
 
 # COMMAND ----------
