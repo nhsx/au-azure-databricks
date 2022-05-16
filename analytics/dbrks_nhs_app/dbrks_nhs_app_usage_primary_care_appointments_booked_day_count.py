@@ -87,6 +87,7 @@ df2 = df1[df1['Date'] >= '2021-01-01'].reset_index(drop = True)  #--------- remo
 df2['AppointmentsBooked'] = pd.to_numeric(df2['AppointmentsBooked'],errors='coerce').fillna(0)
 df3 = df2.groupby(['Date','OdsCode']).sum().reset_index()
 df4 = df3.rename(columns = {'OdsCode': 'Practice code', 'AppointmentsBooked': 'Number of primary care appointments booked'})
+df4.index.name = "Unique ID"
 df_processed = df4.copy()
 
 # COMMAND ----------
