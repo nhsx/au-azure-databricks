@@ -15,8 +15,8 @@ USAGE:
                 ...
 CONTRIBUTORS:   Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        16th May 2022
-VERSION:        0.0.1
+CREATED:        17th May 2022
+VERSION:        0.0.2
 """
 
 # COMMAND ----------
@@ -102,13 +102,24 @@ df4 = df3.rename(columns = {'OdsCode': 'Practice code'})
 
 #Denominator porcessing
 # ---------------------------------------------------------------------------------------------------
-df_ref_1 = df_ref.rename(columns = {'GP_Practice_Code': 'Practice code', 'Registered_patient': 'Number of GP registered patients', 'Effective_Snapshot_Date': 'Snapshot date for GP Population data'})
-
-#Joint processing 
+#Get all dates from the NHS app data
 # ---------------------------------------------------------------------------------------------------
-df5 = df4.merge(df_ref_1, how = 'left', on = 'Practice code')
-df5.index.name = "Unique ID"
-df_processed = df5.copy()
+df_date = pd.DataFrame({'Date': df4['Date'].unique()})
+df_date['join_code'] = 'X3003'
+# Add dates to most recent GP population snapshot
+# ----------------------------------------------------------------------------------------------------
+df_ref_1 = df_ref.rename(columns = {'GP_Practice_Code': 'Practice code', 'Registered_patient': 'Number of GP registered patients', 'Effective_Snapshot_Date': 'Snapshot date for GP Population data'})
+df_ref_1['join_code'] = 'X3003'
+df_ref_2 = df_date.merge(df_ref_1, how = 'outer', on = 'join_code').drop(columns = ['join_code'])
+
+#Joint data processing
+# ---------------------------------------------------------------------------------------------------
+df_join = df4.merge(df_ref_2, how = 'outer', on = ['Date', 'Practice code'])
+df_join['Cumulative number of P9 NHS app registrations'] = df_join['Cumulative number of P9 NHS app registrations'].fillna(0)
+df_join['Number of GP registered patients'] = df_join['Number of GP registered patients'].fillna(0)
+df_join['Snapshot date for GP Population data'] = df_join['Snapshot date for GP Population data'].fillna(df_ref_1['Snapshot date for GP Population data'].max())
+df_join.index.name = "Unique ID"
+df_processed = df_join.copy()
 
 # COMMAND ----------
 
