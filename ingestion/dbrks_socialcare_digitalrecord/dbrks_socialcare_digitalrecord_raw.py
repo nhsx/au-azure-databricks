@@ -82,13 +82,13 @@ sink_file = config_JSON['pipeline']['raw']['appended_file']
 # Pull new snapshot dataset
 # -------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, new_source_path)
-file_name_list = datalake_listContents(CONNECTION_STRING, file_system, new_source_path+latestFolder)
+file_name_list = datalake_listContents(CONNECTION_STRING, file_system, new_source_path+ latestFolder)
 file_name_list = [file for file in file_name_list if '.xlsx' in file]
 for new_source_file in file_name_list:
   new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path+latestFolder, new_source_file)
   new_dataframe = pd.read_excel(io.BytesIO(new_dataset), sheet_name = 'PIR responses', header = 0, engine='openpyxl')
   new_dataframe_1 = new_dataframe.loc[:, ~new_dataframe.columns.str.contains('^Unnamed')]
-  new_dataframe_1['Date'] = pd.to_datetime(new_dataframe_1['PIR submission date']).dt.strftime('%Y-%m').max()
+  new_dataframe_1['PIR submission date'] = pd.to_datetime(new_dataframe_1['PIR submission date']).dt.strftime('%Y-%m-%d')
 
 # COMMAND ----------
 
@@ -97,17 +97,17 @@ for new_source_file in file_name_list:
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, historical_source_path)
 historical_dataset = datalake_download(CONNECTION_STRING, file_system, historical_source_path+latestFolder, historical_source_file)
 historical_dataframe = pd.read_parquet(io.BytesIO(historical_dataset), engine="pyarrow")
-historical_dataframe['Date'] = pd.to_datetime(historical_dataframe['Date']).dt.strftime('%Y-%m')
+historical_dataframe['PIR submission date'] = pd.to_datetime(historical_dataframe['PIR submission date']).dt.strftime('%Y-%m-%d')
 
 # Append new data to historical data
 # -----------------------------------------------------------------------
-historical_dates = historical_dataframe['Date'].unique().tolist()
-new_dates = new_dataframe_1['Date'].values.max()
+historical_dates = historical_dataframe['PIR submission date'].unique().tolist()
+new_dates = new_dataframe_1['PIR submission date'].values.max()
 if new_dates in historical_dates:
   print('New data already exists in historical data')
 else:
   historical_dataframe = historical_dataframe.append(new_dataframe_1)
-  historical_dataframe = historical_dataframe.sort_values(by=['Date'])
+  historical_dataframe = historical_dataframe.sort_values(by=['PIR submission date'])
   historical_dataframe = historical_dataframe.reset_index(drop=True)
   historical_dataframe = historical_dataframe.astype(str)
 
