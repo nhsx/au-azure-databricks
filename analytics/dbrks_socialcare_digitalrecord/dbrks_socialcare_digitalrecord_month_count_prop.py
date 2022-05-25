@@ -67,24 +67,46 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 # -------------------------------------------------------------------------
 source_path = config_JSON['pipeline']['project']['source_path']
 source_file = config_JSON['pipeline']['project']['source_file']
+denom_source_path = config_JSON['pipeline']['project']['reference_source_path']
+denom_source_file = config_JSON['pipeline']['project']['reference_source_file']
 file_system = config_JSON['pipeline']['adl_file_system']
 sink_path = config_JSON['pipeline']['project']['sink_path']
 sink_file = config_JSON['pipeline']['project']['sink_file']  
 
 # COMMAND ----------
 
-# Processing
+# Numerator Processing
 # -------------------------------------------------------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
-df['Use a Digital Social Care Record system?'] = df['Use a Digital Social Care Record system?'].replace('Yes',1).replace('No',0)
-df = df[df['Location Status'] == 'Active']
-df_1 = df[['Date', 'Use a Digital Social Care Record system?']]
-df_2 = df_1.groupby(['Date'])['Use a Digital Social Care Record system?'].agg(['sum','count']).reset_index()
-df_3 = df_2.rename(columns = {'sum':'Number of social care providers that have adopted a digital social care record', 'count': 'Number of social care providers that have submitted a provider information return'})
-df_3.index.name = "Unique ID"
-df_processed = df_3.copy()
+df_1 = df[["Location ID", "Location Status", "PIR submission date", "Use a Digital Social Care Record system?"]]
+df_1['PIR submission date'] = pd.to_datetime(df_1['PIR submission date']).dt.strftime('%Y-%m')
+df_2 = df_1[~df_1.duplicated(['Location ID', 'Use a Digital Social Care Record system?'])].reset_index(drop = True)
+df_2['Use a Digital Social Care Record system?'] = df_2['Use a Digital Social Care Record system?'].replace('Yes',1).replace('No',0)
+df_3 = df_2[df_2['Location Status'] == 'Active']
+df_4 = df_3.groupby(['PIR submission date']).sum().cumsum().reset_index()
+df_4 = df_4.rename(columns = {'PIR submission date': 'Date', 'Use a Digital Social Care Record system?': 'Cummulative number of adult socialcare providers that have adopted a digital social care record'})
+
+# Numerator Processing
+# -------------------------------------------------------------------------
+latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, denom_source_path)
+file = datalake_download(CONNECTION_STRING, file_system, denom_source_path+latestFolder, denom_source_file)
+df_ref = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
+df_ref_1 = df_ref[['Location CQC ID ', 'Dormant (Y/N)','Date']]
+df_ref_2= df_ref_1[df_ref_1['Dormant (Y/N)'] == 'N'].reset_index(drop = True)
+df_ref_3=df_ref_2.groupby('Date').count().reset_index().drop(columns = 'Dormant (Y/N)')
+df_ref_4 = df_ref_3.rename(columns = {'Location CQC ID ': 'Number of active adult socialcare organisations'})
+
+# COMMAND ----------
+
+# Joint processing
+# -------------------------------------------------------------------------
+df_join = df_4.merge(df_ref_4, how ='left', on = 'Date')
+df_join['Percentage of adult socialcare providers that have adopted a digital social care record']= df_join['Cummulative number of adult socialcare providers that have adopted a digital social care record']/df_join['Number of active adult socialcare organisations']
+df_join.index.name = "Unique ID"
+df_join = df_join.round(4)
+df_processed = df_join.copy()
 
 # COMMAND ----------
 
