@@ -90,8 +90,8 @@ df_4 = df_4.rename(columns = {'PIR submission date': 'Date', 'Use a Digital Soci
 
 # Numerator Processing
 # -------------------------------------------------------------------------
-latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, denom_source_path)
-file = datalake_download(CONNECTION_STRING, file_system, denom_source_path+latestFolder, denom_source_file)
+latestFolder_denom = datalake_latestFolder(CONNECTION_STRING, file_system, denom_source_path)
+file = datalake_download(CONNECTION_STRING, file_system, denom_source_path+latestFolder_denom, denom_source_file)
 df_ref = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 df_ref_1 = df_ref[['Location CQC ID ', 'Dormant (Y/N)','Date']]
 df_ref_2= df_ref_1[df_ref_1['Dormant (Y/N)'] == 'N'].reset_index(drop = True)
