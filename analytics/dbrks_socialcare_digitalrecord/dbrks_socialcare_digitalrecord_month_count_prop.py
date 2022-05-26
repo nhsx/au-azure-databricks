@@ -85,10 +85,11 @@ df_1['PIR submission date'] = pd.to_datetime(df_1['PIR submission date']).dt.str
 df_2 = df_1[~df_1.duplicated(['Location ID', 'Use a Digital Social Care Record system?'])].reset_index(drop = True)
 df_2['Use a Digital Social Care Record system?'] = df_2['Use a Digital Social Care Record system?'].replace('Yes',1).replace('No',0)
 df_3 = df_2[df_2['Location Status'] == 'Active']
-df_4 = df_3.groupby(['PIR submission date']).sum().cumsum().reset_index()
-df_4 = df_4.rename(columns = {'PIR submission date': 'Date', 'Use a Digital Social Care Record system?': 'Cummulative number of adult socialcare providers that have adopted a digital social care record'})
+df_4 = df_3.groupby(['PIR submission date'])['Use a Digital Social Care Record system?'].agg(['sum', 'count']).reset_index()
+df_4[['sum', 'count']] = df_4[['sum', 'count']].cumsum()
+df_4 = df_4.rename(columns = {'PIR submission date': 'Date', 'sum': 'Cummulative number of adult socialcare providers that have adopted a digital social care record', 'count': 'Cummulative number of adult socialcare providers that returned a PIR'})
 
-# Numerator Processing
+# Denom Processing
 # -------------------------------------------------------------------------
 latestFolder_denom = datalake_latestFolder(CONNECTION_STRING, file_system, denom_source_path)
 file = datalake_download(CONNECTION_STRING, file_system, denom_source_path+latestFolder_denom, denom_source_file)
