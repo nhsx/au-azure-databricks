@@ -97,7 +97,7 @@ for pp in soup.select("div.nhsd-m-infographic__headline-box"):
        )
   res = [int(i) for i in ptext.split() if i.isdigit()]
   results = results + res
-del results[-4:]
+del results[-3:]
 results.append(date)
 df_new = pd.DataFrame([results])
 df_new.columns = [
