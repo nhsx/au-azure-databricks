@@ -87,8 +87,8 @@ df1 = df[['Daily', 'UsersODRegistrations']]
 df1.iloc[:, 0] = df1.iloc[:,0].dt.strftime('%Y-%m')
 df2 = df1.groupby(df1.iloc[:,0]).sum().reset_index()
 df2.rename(columns = {'Daily':'Date', 'UsersODRegistrations':'Number of NHS App organ donation registrations'}, inplace=True)
+df_2.index.name = "Unique ID"
 df_processed = df2.copy()
-
 
 # COMMAND ----------
 
