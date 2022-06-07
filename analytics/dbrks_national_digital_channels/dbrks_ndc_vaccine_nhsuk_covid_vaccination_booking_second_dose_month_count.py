@@ -87,8 +87,8 @@ df1 = df[['Daily', 'total_dose_2']]
 df1.iloc[:, 0] = df1.iloc[:,0].dt.strftime('%Y-%m')
 df2 = df1.groupby(df1.iloc[:,0]).sum().reset_index()
 df2.rename(columns = {'Daily':'Date', 'total_dose_2':'Number of NHS.UK vaccination bookings 2nd dose'}, inplace=True)
+df2.index.name = "Unique ID"
 df_processed = df2.copy()
-
 
 # COMMAND ----------
 

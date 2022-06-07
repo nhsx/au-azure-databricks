@@ -88,8 +88,8 @@ df1['total_bookings'] = df1['total_dose_1'] + df1['total_dose_2'] + df1['booster
 df2 = df1.groupby(df1.iloc[:,0]).sum().reset_index()
 df2.rename(columns = {'Daily':'Date', 'total_bookings':'Number of all covid vaccination bookings'}, inplace=True)
 df3=df2[['Date','Number of all covid vaccination bookings']]
+df3.index.name = "Unique ID"
 df_processed = df3.copy()
-
 
 # COMMAND ----------
 
