@@ -80,7 +80,7 @@ sink_file = config_JSON['pipeline']['raw']['appended_file']
 # -------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, new_source_path)
 file_name_list = datalake_listContents(CONNECTION_STRING, file_system, new_source_path+latestFolder)
-file_name_list = [file for file in file_name_list if 'WeeklyDeviceInfo' in file]
+file_name_list = [file for file in file_name_list if 'WeeklyDownloads' in file]
 for new_source_file in file_name_list:
   new_dataset = datalake_download(CONNECTION_STRING, file_system, new_source_path+latestFolder, new_source_file)
   new_dataframe = pd.read_csv(io.BytesIO(new_dataset))
