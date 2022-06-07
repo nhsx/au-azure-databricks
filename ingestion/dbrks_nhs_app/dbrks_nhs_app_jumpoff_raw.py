@@ -17,8 +17,8 @@ USAGE:
                 ...
 CONTRIBUTORS:   Mattia Ficarelli, Chris Todd, Everistus Oputa
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        11 Apr. 2022
-VERSION:        0.0.1
+CREATED:        07 Jun. 2022
+VERSION:        0.0.2
 """
 
 # COMMAND ----------
@@ -58,7 +58,7 @@ CONNECTION_STRING = dbutils.secrets.get(scope="datalakefs", key="CONNECTION_STRI
 # Load JSON config from Azure datalake
 # -------------------------------------------------------------------------
 file_path_config = "/config/pipelines/nhsx-au-analytics/"
-file_name_config = "config_nhs_app_device_dbrks.json"
+file_name_config = "config_nhs_app_jumpoff_dbrks.json"
 file_system_config = "nhsxdatalakesagen2fsprod"
 config_JSON = datalake_download(CONNECTION_STRING, file_system_config, file_path_config, file_name_config)
 config_JSON = json.loads(io.BytesIO(config_JSON).read())
