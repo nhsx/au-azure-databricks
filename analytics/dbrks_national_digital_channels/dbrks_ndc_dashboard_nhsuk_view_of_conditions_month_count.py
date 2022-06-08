@@ -8,14 +8,14 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_ndc_channel_shift_population_registered_other_pol_service_mount_count.py
+FILE:           dbrks_ndc_dashboard_nhsuk_view_of_conditions_month_count.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric M246: Population registered with other POL service
+                Databricks notebook with processing code for the NHSX Analyticus unit metric M228: Views of conditions information on NHS.uk
 USAGE:
                 ...
 CONTRIBUTORS:   Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        1st June 2022
+CREATED:        7th June 2022
 VERSION:        0.0.1
 """
 
@@ -66,24 +66,16 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 file_system = config_JSON['pipeline']['adl_file_system']
 source_path = config_JSON['pipeline']['project']['source_path']
 source_file = config_JSON['pipeline']['project']["source_file_monthly"]
-reference_source_path = config_JSON['pipeline']['project']["reference_source_path_pomi"]
-reference_source_file = config_JSON['pipeline']['project']["reference_source_file_pomi"]
-sink_path = config_JSON['pipeline']['project']['databricks'][3]['sink_path']
-sink_file = config_JSON['pipeline']['project']['databricks'][3]['sink_file']  
+sink_path = config_JSON['pipeline']['project']['databricks'][7]['sink_path']
+sink_file = config_JSON['pipeline']['project']['databricks'][7]['sink_file']  
 
 # COMMAND ----------
 
-# Ingestion of numerator data
+# Ingestion of numerator data (NHS app performance data)
 # ---------------------------------------------------------------------------------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
-
-# Ingestion of reference deomintator data (POMI)
-# ---------------------------------------------------------------------------------------------------
-ref_latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, reference_source_path)
-file = datalake_download(CONNECTION_STRING, file_system, reference_source_path+ref_latestFolder, reference_source_file)
-df_ref = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 
 # COMMAND ----------
 
@@ -92,29 +84,12 @@ df_ref = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 
 #Numerator
 # ---------------------------------------------------------------------------------------------------
-df_1 = df[["Monthly", "all_time_nhs_app_registered_users"]]
+df_1 = df[["Monthly", "Conditions"]]
 df_1.iloc[:, 0] = df_1.iloc[:,0].dt.strftime('%Y-%m')
 df_2 = df_1.groupby(df_1.iloc[:,0]).sum().reset_index()
-df_2.rename(columns  = {'Monthly': 'Date', "all_time_nhs_app_registered_users": "Number of all time NHS App registered users"}, inplace = True)
-
-#Denominator porcessing
-# ---------------------------------------------------------------------------------------------------
-df_ref_1 = df_ref[["Report_Period_End", "Field", "Value"]]
-df_ref_2 = df_ref_1[df_ref_1['Field']=='Total_Pat_Enbld'].reset_index(drop = True)
-df_ref_2["Report_Period_End"] = pd.to_datetime(df_ref_2["Report_Period_End"]).dt.strftime('%Y-%m')
-df_ref_3 = df_ref_2.groupby('Report_Period_End')['Value'].sum().reset_index()
-
-# COMMAND ----------
-
-#Joint processing 
-# ---------------------------------------------------------------------------------------------------
-df_joint = df_2.merge(df_ref_3, how = 'inner', left_on = 'Date', right_on = 'Report_Period_End')
-df_joint_1 = df_joint.drop(columns = ['Report_Period_End'])
-df_joint_1.rename(columns = {'Value': 'Total number of patients registered to use an patient online transactional services'}, inplace=True)
-df_joint_1['Number of patients registered with an other patient online service'] = df_joint_1['Total number of patients registered to use an patient online transactional services'] - df_joint_1['Number of all time NHS App registered users']
-df_joint_1.index.name = "Unique ID"
-df_joint_2 = df_joint_1.round(4)
-df_processed = df_joint_2.copy()
+df_2.rename(columns  = {'Monthly': 'Date', "Conditions": 'Number of views of conditions information'}, inplace = True)
+df_2.index.name = "Unique ID"
+df_processed = df_2.copy()
 
 # COMMAND ----------
 
