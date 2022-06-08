@@ -8,14 +8,14 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_ndc_dashboard_nhsuk_view_of_conditions_mount_count.py
+FILE:           dbrks_ndc_dashboard_nhsapp_repeat_prescriptions_ordered_month_count.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric M228: Views of conditions information on NHS.uk
+                Databricks notebook with processing code for the NHSX Analyticus unit metric M224: No. repeat prescriptions ordered via NHS App
 USAGE:
                 ...
 CONTRIBUTORS:   Mattia Ficarelli
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        7th June 2022
+CREATED:        1st June 2022
 VERSION:        0.0.1
 """
 
@@ -65,9 +65,9 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 #Get parameters from JSON config
 file_system = config_JSON['pipeline']['adl_file_system']
 source_path = config_JSON['pipeline']['project']['source_path']
-source_file = config_JSON['pipeline']['project']["source_file_monthly"]
-sink_path = config_JSON['pipeline']['project']['databricks'][7]['sink_path']
-sink_file = config_JSON['pipeline']['project']['databricks'][7]['sink_file']  
+source_file = config_JSON['pipeline']['project']["source_file_daily"]
+sink_path = config_JSON['pipeline']['project']['databricks'][5]['sink_path']
+sink_file = config_JSON['pipeline']['project']['databricks'][5]['sink_file']  
 
 # COMMAND ----------
 
@@ -84,10 +84,10 @@ df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 
 #Numerator
 # ---------------------------------------------------------------------------------------------------
-df_1 = df[["Monthly", "Conditions"]]
+df_1 = df[["Daily", "Prescriptions"]]
 df_1.iloc[:, 0] = df_1.iloc[:,0].dt.strftime('%Y-%m')
 df_2 = df_1.groupby(df_1.iloc[:,0]).sum().reset_index()
-df_2.rename(columns  = {'Monthly': 'Date', "Conditions": 'Number of views of conditions information'}, inplace = True)
+df_2.rename(columns  = {'Daily': 'Date', "Prescriptions": 'Number of repeat prescriptions ordered via the NHS App'}, inplace = True)
 df_2.index.name = "Unique ID"
 df_processed = df_2.copy()
 

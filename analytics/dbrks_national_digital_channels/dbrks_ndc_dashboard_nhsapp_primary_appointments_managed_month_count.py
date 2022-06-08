@@ -8,7 +8,7 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_ndc_dashboard_nhsapp_primary_appointments_managed_mount_count.py
+FILE:           dbrks_ndc_dashboard_nhsapp_primary_appointments_managed_month_count.py
 DESCRIPTION:
                 Databricks notebook with processing code for the NHSX Analyticus unit metric M227: Primary care appointments managed via NHS App
 USAGE:
