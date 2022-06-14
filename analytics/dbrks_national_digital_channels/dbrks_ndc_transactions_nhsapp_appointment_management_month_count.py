@@ -104,7 +104,7 @@ df_join = df_daily_2.merge(df_2, how = 'left', left_on = 'Daily', right_on  = 'M
 col_list = ["PKB_appointments", "manageYourReferral", "UsersAppointmentsBooked"]
 df_join['Number of appointments managed on the NHS App'] = df_join[col_list].sum(axis=1)
 df_join_1 = df_join.drop(columns = col_list)
-df_join_1.rename(columns  = {'day': 'Date'}, inplace = True)
+df_join_1.rename(columns  = {'Daily': 'Date'}, inplace = True)
 df_join_1.index.name = "Unique ID"
 df_processed = df_join_1.copy()
 
