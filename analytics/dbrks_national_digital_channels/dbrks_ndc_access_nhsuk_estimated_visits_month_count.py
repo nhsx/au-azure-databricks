@@ -8,7 +8,7 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_ndc_transactions_nhsapp_prescriptions_medicine_month_count.py
+FILE:           dbrks_ndc_access_nhsuk_estimated_visits_month_count.py
 DESCRIPTION:
                 Databricks notebook with processing code for the NHSX Analyticus unit metric M256: NHS.UK Estimated Visits
 USAGE:
