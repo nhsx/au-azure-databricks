@@ -90,7 +90,7 @@ df_econsult = pd.read_parquet(io.BytesIO(file_1), engine="pyarrow")
 
 #Numerator (Montly)
 # ---------------------------------------------------------------------------------------------------
-df_1 = df[["Monthly", "PKB_messages", "Engage_admin", "Engage_medical"]]
+df_1 = df[["Monthly", "PKB_messages", "Engage_admin", "Engage_medical", "Substrakt_messages", "Engage_messages"]]
 df_1.iloc[:, 0] = df_1.iloc[:,0].dt.strftime('%Y-%m')
 df_2 = df_1.groupby(df_1.iloc[:,0]).sum().reset_index()
 
@@ -103,7 +103,7 @@ df_econsult_2 = df_econsult_1.groupby(df_econsult_1.iloc[:,0]).sum().reset_index
 # Join Monthly and Daily Datasets
 # ---------------------------------------------------------------------------------------------------
 df_join = df_econsult_2.merge(df_2, how = 'left', left_on = 'day', right_on  = 'Monthly').drop(columns = 'Monthly')
-col_list = ["PKB_messages", "Engage_admin", "Engage_medical", "count"]
+col_list = ["PKB_messages", "Engage_admin", "Engage_medical", "Substrakt_messages", "Engage_messages", "count"]
 df_join['Number of messages and consultations on the NHS App'] = df_join[col_list].sum(axis=1)
 df_join_1 = df_join.drop(columns = col_list)
 df_join_1.rename(columns  = {'day': 'Date'}, inplace = True)
