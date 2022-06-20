@@ -8,14 +8,14 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_ndc_transactions_nhsapp_messaging_consultations_month_count.py
+FILE:           dbrks_ndc_channel_shift_dcr_views_other_pol_nhs_month_count.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric M236: Messaging and Consultations
+                Databricks notebook with processing code for the NHSX Analytics unit metric M252: DCR views through other POL service
 USAGE:
                 ...
-CONTRIBUTORS:   Mattia Ficarelli
+CONTRIBUTORS:   Chris Todd
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        14th June 2022
+CREATED:        16th June 2022
 VERSION:        0.0.1
 """
 
@@ -65,50 +65,55 @@ config_JSON = json.loads(io.BytesIO(config_JSON).read())
 #Get parameters from JSON config
 file_system = config_JSON['pipeline']['adl_file_system']
 source_path = config_JSON['pipeline']['project']['source_path']
-source_file = config_JSON['pipeline']['project']["source_file_monthly"]
-source_file_2 = config_JSON['pipeline']['project']["source_file_ods"]
-sink_path = config_JSON['pipeline']['project']['databricks'][28]['sink_path']
-sink_file = config_JSON['pipeline']['project']['databricks'][28]['sink_file']  
+source_file = config_JSON['pipeline']['project']["source_file_daily"]
+reference_source_path = config_JSON['pipeline']['project']["reference_source_path_pomi"]
+reference_source_file = config_JSON['pipeline']['project']["reference_source_file_pomi"]
+sink_path = config_JSON['pipeline']['project']['databricks'][39]['sink_path']
+sink_file = config_JSON['pipeline']['project']['databricks'][39]['sink_file']  
 
 # COMMAND ----------
 
-# Ingestion of numerator data (Monthly)
+# Ingestion of numerator data (NHS app performance data)
 # ---------------------------------------------------------------------------------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 df = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 
-# Ingestion of numerator data (Daily)
+# Ingestion of reference deomintator data (POMI)
 # ---------------------------------------------------------------------------------------------------
-file_1 = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file_2)
-df_econsult = pd.read_parquet(io.BytesIO(file_1), engine="pyarrow")
+ref_latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, reference_source_path)
+file = datalake_download(CONNECTION_STRING, file_system, reference_source_path+ref_latestFolder, reference_source_file)
+df_ref = pd.read_parquet(io.BytesIO(file), engine="pyarrow")
 
 # COMMAND ----------
 
 #Processing
 # ---------------------------------------------------------------------------------------------------
 
-#Numerator (Montly)
+#Numerator
 # ---------------------------------------------------------------------------------------------------
-df_1 = df[["Monthly", "PKB_messages", "Engage_admin", "Engage_medical", "Substrakt_messages", "Engage_messages"]]
-df_1.iloc[:, 0] = df_1.iloc[:,0].dt.strftime('%Y-%m')
-df_2 = df_1.groupby(df_1.iloc[:,0]).sum().reset_index()
+df1 = df[["Daily", "RecordViewsDCR"]].copy()
+df1.rename(columns  = {'Daily': 'Date', "RecordViewsDCR": 'Number of DCR views through the NHS app'}, inplace = True)
+df1 = df1.resample('M', on='Date').sum().reset_index()
+df1['Date'] = df1['Date'].dt.strftime('%Y-%m')
+df1.index.name = "Unique ID"
 
-#Numerator (econuslt)
-# ---------------------------------------------------------------------------------------------------
-df_econsult_1 = df_econsult[["day", "count"]]
-df_econsult_1.iloc[:, 0] = df_econsult_1.iloc[:,0].dt.strftime('%Y-%m')
-df_econsult_2 = df_econsult_1.groupby(df_econsult_1.iloc[:,0]).sum().reset_index()
+# # #Denominator porcessing
+# # # ---------------------------------------------------------------------------------------------------
+df_ref1 = df_ref.loc[df_ref['Field']=='Pat_DetCodeRec_Use', ["Report_Period_End", "Field", "Value"]].copy()
+df_ref1.rename(columns = {'Value': 'DCR views through other POL service'}, inplace=True)
+df_ref1["Report_Period_End"] = pd.to_datetime(df_ref1["Report_Period_End"])
+df_ref1 = df_ref1.resample('M', on='Report_Period_End').sum().reset_index()
+df_ref1['Report_Period_End'] = df_ref1['Report_Period_End'].dt.strftime('%Y-%m')
 
-# Join Monthly and Daily Datasets
-# ---------------------------------------------------------------------------------------------------
-df_join = df_econsult_2.merge(df_2, how = 'left', left_on = 'day', right_on  = 'Monthly').drop(columns = 'Monthly')
-col_list = ["PKB_messages", "Engage_admin", "Engage_medical", "Substrakt_messages", "Engage_messages", "count"]
-df_join['Number of messages and consultations on the NHS App'] = df_join[col_list].sum(axis=1)
-df_join_1 = df_join.drop(columns = col_list)
-df_join_1.rename(columns  = {'day': 'Date'}, inplace = True)
-df_join_1.index.name = "Unique ID"
-df_processed = df_join_1.copy()
+# # #Joint processing 
+# # # ---------------------------------------------------------------------------------------------------
+
+df_joint = df1.merge(df_ref1, how = 'inner', left_on = 'Date', right_on = 'Report_Period_End')
+df_joint = df_joint.drop(columns = ['Report_Period_End'])
+df_joint['DCR views through other POL service'] = df_joint['DCR views through other POL service'] - df_joint['Number of DCR views through the NHS app']
+df_joint.index.name = "Unique ID"
+df_processed = df_joint.copy()
 
 # COMMAND ----------
 
