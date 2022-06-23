@@ -91,6 +91,7 @@ df_2 = df_1.groupby(df_1.iloc[:,0]).sum().reset_index()
 df_2.rename(columns  = {'Daily': 'Date', "RecordViewsDCR": 'Number of Detail Coded Record Views', 
                         'RecordViews': 'Number of all Record Views'}, inplace = True)
 df_2['Proportion of Detail Coded Record Views'] = df_2['Number of Detail Coded Record Views'] / df_2['Number of all Record Views']
+df_2['Proportion of Detail Coded Record Views'] = df_2['Proportion of Detail Coded Record Views'].fillna(0)
 df_3 = df_2.round(4)
 df_3.index.name = "Unique ID"
 df_processed = df_3.copy()
