@@ -8,15 +8,15 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_national_digital_channels_raw.py
+FILE:           dbrks_national_digital_channels_highlights_raw.py
 DESCRIPTION:
                 Databricks notebook with code to ingest new raw data for the NHSX Analytics unit metrics within 
                 the National Digital Channels (NDC) Dashboard Porject
 USAGE:
                 ...
-CONTRIBUTORS:   Mattia Ficarelli
+CONTRIBUTORS:   Chris Todd
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        26th May. 2022
+CREATED:        28th July. 2022
 VERSION:        0.0.1
 """
 
