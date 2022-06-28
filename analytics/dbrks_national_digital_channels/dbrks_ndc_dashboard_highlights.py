@@ -8,14 +8,14 @@
 # -------------------------------------------------------------------------
 
 """
-FILE:           dbrks_ndc_dashboard_gp_record_view_month_count.py
+FILE:           dbrks_ndc_dashboard_highlights.py
 DESCRIPTION:
-                Databricks notebook with processing code for the NHSX Analyticus unit metric M230: GP Record Views
+                Databricks notebook with processing code for the NHSX Analytics unit metric M268: Highlights
 USAGE:
                 ...
-CONTRIBUTORS:   Everistus Oputa
+CONTRIBUTORS:   Chris Todd
 CONTACT:        data@nhsx.nhs.uk
-CREATED:        1st June 2022
+CREATED:        28th July 2022
 VERSION:        0.0.1
 """
 
