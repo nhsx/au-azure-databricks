@@ -112,6 +112,8 @@ DSPT_ODS_selection_3 = DSPT_ODS_selection_2[DSPT_ODS_selection_2.Sector.isin(["N
 
 # Creation of final dataframe with all currently open NHS Trusts which meet or exceed the DSPT standard
 # --------------------------------------------------------------------------------------------------------
+DSPT_ODS_selection_3 = DSPT_ODS_selection_3.rename(columns = {"Status":"Latest Status"})
+
 DSPT_ODS_selection_4 = DSPT_ODS_selection_3[DSPT_ODS_selection_3["Latest Status"].isin(["20/21 Standards Met", 
                                                                                          "20/21 Standards Exceeded", 
                                                                                          "21/22 Standards Met", 
