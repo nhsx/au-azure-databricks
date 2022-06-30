@@ -77,6 +77,9 @@ sink_file = config_JSON['pipeline']['project']['databricks'][0]['sink_file']
 # -------------------------------------------------------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 reference_latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, reference_path)
+print(source_path)
+print(latestFolder)
+print(source_file)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 reference_file = datalake_download(CONNECTION_STRING, file_system, reference_path+reference_latestFolder, reference_file)
 DSPT_df = pd.read_csv(io.BytesIO(file))
@@ -112,6 +115,8 @@ DSPT_ODS_selection_3 = DSPT_ODS_selection_2[DSPT_ODS_selection_2.Sector.isin(["N
 
 # Creation of final dataframe with all currently open NHS Trusts which meet or exceed the DSPT standard
 # --------------------------------------------------------------------------------------------------------
+DSPT_ODS_selection_3 = DSPT_ODS_selection_3.rename(columns = {"Status":"Latest Status"})
+
 DSPT_ODS_selection_4 = DSPT_ODS_selection_3[DSPT_ODS_selection_3["Latest Status"].isin(["20/21 Standards Met", 
                                                                                          "20/21 Standards Exceeded", 
                                                                                          "21/22 Standards Met", 
