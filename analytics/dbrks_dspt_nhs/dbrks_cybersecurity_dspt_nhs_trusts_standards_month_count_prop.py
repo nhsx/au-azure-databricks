@@ -77,9 +77,6 @@ sink_file = config_JSON['pipeline']['project']['databricks'][0]['sink_file']
 # -------------------------------------------------------------------------
 latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, source_path)
 reference_latestFolder = datalake_latestFolder(CONNECTION_STRING, file_system, reference_path)
-print(source_path)
-print(latestFolder)
-print(source_file)
 file = datalake_download(CONNECTION_STRING, file_system, source_path+latestFolder, source_file)
 reference_file = datalake_download(CONNECTION_STRING, file_system, reference_path+reference_latestFolder, reference_file)
 DSPT_df = pd.read_csv(io.BytesIO(file))
