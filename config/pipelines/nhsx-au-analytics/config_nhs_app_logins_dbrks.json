@@ -1,0 +1,85 @@
+{
+	"metadata":  {
+		"products": [
+			{
+			"product_name": "Digitise, Connect, Transform (DCT) Dashboard",
+			"granularity": "National",
+			"topic": "NHS App Logins",
+			"metrics": [
+				{
+            		"id": "M001",
+            		"full_name": "No.of people logging into NHS digital services",
+	 				"short_name":"Total number of NHS Logins each week"
+        			},
+				{
+					"id": "M041",
+					"full_name": "No. of people logging into NHS digital services each week as a % of the GP patient list",
+						"short_name":"% people logging into NHS digital services"
+					}				
+			]
+			}
+			]
+		},
+	"pipeline": {
+		"name": "trigger_nhs_app_logins",
+    	"folder": "nhsx-au-analytics/nhs_digital/nhs_app_logins/",
+		"adl_file_system": "nhsxdatalakesagen2fsprod",
+		"ingestion": {
+			"databricks_notebook": "/Repos/prod/au-azure-databricks/ingestion/dbrks_nhs_app_logins/dbrks_nhs_app_logins_raw"
+		},
+		"raw": {		
+			"snapshot_source_path": "land/datainbox/email_attachment/alerts@splunkcloud.com/Splunk Alert: Last 6 Months Unique Accounts and Total logins by Week/",
+			"appended_path": "raw/nhsdigital/email_attachment/parquet/nhs_app_logins/historical/",
+			"appended_file": "nhs_app_logins_historical.parquet"
+		},
+		"proc": 
+			{
+			"metric": "nhs_app_logins_week_count",
+			"source_path": "raw/nhsdigital/email_attachment/parquet/nhs_app_logins/historical/",
+			"source_file": "nhs_app_logins_historical.parquet",
+			"sink_path": "proc/sources/nhsdigital/email_attachment/parquet/nhs_app_logins/historical/",
+			"sink_file": "nhs_app_logins_historical.parquet"
+			},
+		"project": {
+			"source_path": "proc/sources/nhsdigital/email_attachment/parquet/nhs_app_logins/historical/",
+			"source_file": "nhs_app_logins_historical.parquet",
+			"M041_reference_source_path": "proc/sources/ncdr_etp/adf_v2/table/ons_population_demography/historical/",
+			"M041_reference_source_file": "table_ons_population_demography_historical.parquet",
+			"databricks_orchestrator_notebook": "/Repos/prod/au-azure-databricks/orchestration/dbrks_nhs_app_logins_orchestrator",
+			"databricks":[    
+    			{
+				"metric": "nhs_app_logins_week_count",
+				"sink_path": "proc/projects/nhsx_slt_analytics/national_digital_channels/nhs_app_logins/nhs_app_logins_week_count/",
+				"sink_file": "nhs_app_logins_week_count.csv",
+				"databricks_notebook": "/Repos/prod/au-azure-databricks/analytics/dbrks_nhs_app_logins/dbrks_nhs_app_logins_week_count"
+				},
+				{
+					"metric": "nhs_app_logins_week_prop",
+					"sink_path": "proc/projects/nhsx_slt_analytics/national_digital_channels/nhs_app_logins/nhs_app_logins_week_prop/",
+					"sink_file": "nhs_app_logins_week_prop.csv",
+					"databricks_notebook": "/Repos/prod/au-azure-databricks/analytics/dbrks_nhs_app_logins/dbrks_nhs_app_logins_week_count"
+					} 	 		        
+			]
+		},
+		"staging":[        			
+			{
+				"metric": "nhs_app_logins_week_count",
+				"stored_procedure": "[dbo].[stored_proc_nhs_app_logins_week_count]",
+				"source_path": "proc/projects/nhsx_slt_analytics/national_digital_channels/nhs_app_logins/nhs_app_logins_week_count/",
+				"source_file": "nhs_app_logins_week_count.csv",
+				"sink_table": "nhs_app_logins_week_count"
+				}, 
+			{
+				"metric": "nhs_app_logins_week_prop",
+				"stored_procedure": "[dbo].[stored_proc_nhs_app_logins_week_prop]",
+				"source_path": "proc/projects/nhsx_slt_analytics/national_digital_channels/nhs_app_logins/nhs_app_logins_week_prop/",
+				"source_file": "nhs_app_logins_week_prop.csv",
+				"sink_table": "nhs_app_logins_week_prop"
+				} 
+    			
+			]
+		
+	}
+
+}
+
