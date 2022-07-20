@@ -143,6 +143,7 @@ datalake_upload(file_contents, CONNECTION_STRING, file_system, appended_path+cur
 # ----------------------------------------
 new_data_ods = pd.read_excel(io.BytesIO(new_dataset), sheet_name = 'econsult', engine='openpyxl')
 new_data_ods_1 = new_data_ods.loc[:, ~new_data_ods.columns.str.contains('^Unnamed')]
+new_data_ods_1['day'] = pd.to_datetime(new_data_ods_1['day'])
 new_data_ods_df = new_data_ods_1.copy()
 
 # Upload merged data to datalake
