@@ -97,7 +97,7 @@ df_4 = df_3.groupby("Date").sum().reset_index()
 
 #20/21 and 21/22 FY
 #---------------------------------
-df_5 = df_1.loc[df_1['Date'] >= '2021-10'] #------------- change filter once new finanical year added.
+df_5 = df_1.loc[(df_1['Date'] >= '2021-10') & (df_1['Date'] < '2022-09')] #------------- change filter once new finanical year added.
 df_6 = df_5[
 (df_5["CQC registered location - latest DSPT status"] == "20/21 Standards Met.") |
 (df_5["CQC registered location - latest DSPT status"] == "20/21 Standards Exceeded.") |
@@ -108,10 +108,17 @@ df_7 = df_6.groupby("Date").sum().reset_index()
 
 #21/22 and 22/23 FY
 #---------------------------------
-# Add code here
+df_8 = df_1.loc[df_1['Date'] >= '2022-09']
+df_9 = df_8[
+(df_8["CQC registered location - latest DSPT status"] == "21/22 Standards Met.") |
+(df_8["CQC registered location - latest DSPT status"] == "21/22 Standards Exceeded.") |
+(df_8["CQC registered location - latest DSPT status"] == "22/23 Standards Met.") |
+(df_8["CQC registered location - latest DSPT status"] == "22/23 Standards Exceeded.")
+].reset_index(drop=True)
+df_10 = df_9.groupby("Date").sum().reset_index()
 
 #---------------------------------------------------------------------------------------
-df_fy_appended = pd.concat([df_4, df_7]).reset_index(drop = True) #------------- Once a new finanical year is added appened additional FY dataframe. ie pd.concat([df_4, df_7, df_10]).reset_index(drop = True)
+df_fy_appended = pd.concat([df_4, df_7, df_10]).reset_index(drop = True) #------------- Once a new finanical year is added appened additional FY dataframe. ie pd.concat([df_4, df_7, df_10]).reset_index(drop = True)
 #---------------------------------------------------------------------------------------
 df_dates = df_1.groupby("Date").sum().reset_index()
 df_dates_merged = df_fy_appended.merge(df_dates, on = 'Date', how = 'left')
