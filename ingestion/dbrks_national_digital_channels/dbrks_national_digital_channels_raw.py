@@ -124,18 +124,18 @@ datalake_upload(file_contents, CONNECTION_STRING, file_system, appended_path+cur
 
 # COMMAND ----------
 
-# Pull Notification dataset
-# ----------------------------------------
-new_data_notfication = pd.read_excel(io.BytesIO(new_dataset), sheet_name = 'get your nhs no.', engine='openpyxl')
-new_data_notfication_1 = new_data_notfication.loc[:, ~new_data_notfication.columns.str.contains('^Unnamed')]
-notification_raw_df = new_data_notfication_1.copy()
+# # Pull Notification dataset
+# # ----------------------------------------
+# new_data_notfication = pd.read_excel(io.BytesIO(new_dataset), sheet_name = 'get your nhs no.', engine='openpyxl')
+# new_data_notfication_1 = new_data_notfication.loc[:, ~new_data_notfication.columns.str.contains('^Unnamed')]
+# notification_raw_df = new_data_notfication_1.copy()
 
-# Upload merged data to datalake
-# -------------------------------------------
-current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
-file_contents = io.BytesIO()
-notification_raw_df.to_parquet(file_contents, engine="pyarrow")
-datalake_upload(file_contents, CONNECTION_STRING, file_system, appended_path+current_date_path, appended_notification_file)
+# # Upload merged data to datalake
+# # -------------------------------------------
+# current_date_path = datetime.now().strftime('%Y-%m-%d') + '/'
+# file_contents = io.BytesIO()
+# notification_raw_df.to_parquet(file_contents, engine="pyarrow")
+# datalake_upload(file_contents, CONNECTION_STRING, file_system, appended_path+current_date_path, appended_notification_file)
 
 # COMMAND ----------
 
